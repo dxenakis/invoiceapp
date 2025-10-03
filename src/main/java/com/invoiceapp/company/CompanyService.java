@@ -9,4 +9,12 @@ public interface CompanyService {
     CompanyResponse getCompanyById(Long id);
     List<CompanyResponse> getAllCompanies();
     void deleteCompany(Long id);
+    CompanyResponse createOrGetByAfm(String vatNumber,
+                                     String name,
+                                     String addressLine,
+                                     String city,
+                                     String postalCode,
+                                     String countryCode,
+                                     String email,
+                                     String phone);
 }

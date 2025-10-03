@@ -45,4 +45,30 @@ public class CompanyServiceImpl implements CompanyService {
     public void deleteCompany(Long id) {
         repo.deleteById(id);
     }
+
+    @Override
+    @Transactional
+    public CompanyResponse createOrGetByAfm(String vat,
+                                            String name,
+                                            String addressLine,
+                                            String city,
+                                            String postalCode,
+                                            String countryCode,
+                                            String email,
+                                            String phone) {
+        return repo.findByAfm(vat)
+                .map(CompanyResponse::fromEntity) // αν υπάρχει ήδη, γύρνα την ίδια εταιρεία
+                .orElseGet(() -> {
+                    Company c = new Company();
+                    c.setAfm(vat.trim());
+                    c.setName(name.trim());
+                    c.setAddressLine(addressLine);
+                    c.setCity(city);
+                    c.setPostalCode(postalCode);
+                    c.setCountryCode(countryCode == null ? "GR" : countryCode);
+                    c.setEmail(email);
+                    c.setPhone(phone);
+                    return CompanyResponse.fromEntity(repo.save(c));
+                });
+    }
 }
