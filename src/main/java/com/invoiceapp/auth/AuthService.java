@@ -37,6 +37,23 @@ public class AuthService {
         this.aadeClient = aadeClient;
     }
 
+    public AuthResponse login(LoginRequest req){
+
+        // 1. Βρες τον χρήστη στη βάση
+        User user = users.findByUsername(req.username())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+
+        // 2. Έλεγξε το password με τον encoder
+        if (!encoder.matches(req.password(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid username or password");
+        }
+
+        // 3. Αν είναι σωστό, βγάλε JWT
+        String token = jwt.generateToken(user);
+        return new AuthResponse(token);
+
+    }
+
     @Transactional
     public AuthResponse registerWithGov(RegisterGovRequest req) {
         validateUserUniqueness(req.username(), req.email());
