@@ -5,6 +5,7 @@ import com.invoiceapp.aade.AadeCompanyDto;
 import com.invoiceapp.auth.dto.*;
 import com.invoiceapp.company.CompanyService;
 import com.invoiceapp.company.dto.CompanyResponse;
+import com.invoiceapp.exception.UserAlreadyExistsException;
 import com.invoiceapp.securityconfig.JwtTokenProvider;
 import com.invoiceapp.user.Role;
 import com.invoiceapp.user.User;
@@ -89,7 +90,7 @@ public class AuthService {
     }
 
     private void validateUserUniqueness(String username, String email) {
-        if (users.existsByUsername(username)) throw new IllegalArgumentException("Username already exists");
+        if (users.existsByUsername(username)) throw new UserAlreadyExistsException("Username already exists");
         if (email != null && !email.isBlank() && users.existsByEmail(email)) throw new IllegalArgumentException("Email already exists");
     }
 
