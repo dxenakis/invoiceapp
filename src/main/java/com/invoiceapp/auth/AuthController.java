@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -17,7 +19,7 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
 
         try {
             return ResponseEntity.ok(auth.login(req));
@@ -29,6 +31,12 @@ public class AuthController {
 
     }
 
+    @PostMapping("/switch-company")
+    public ResponseEntity<AuthResponse> switchCompany(@RequestBody SwitchCompanyRequest req, Principal principal) {
+        String username = principal.getName();
+        String newToken = auth.switchCompany(username, req.companyId());
+        return ResponseEntity.ok(new AuthResponse(newToken));
+    }
 
     @PostMapping("/register/gov")
     public ResponseEntity<AuthResponse> registerWithGov(@Valid @RequestBody RegisterGovRequest req) {

@@ -19,7 +19,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
-                .authorities(user.getRoles().stream().map(Enum::name).toArray(String[]::new))
+                .authorities("USER") // placeholder, πραγματικοί ρόλοι έρχονται από JWT -->//.authorities(user.getRoles().stream().map(Enum::name).toArray(String[]::new))
                 .build();
     }
 }

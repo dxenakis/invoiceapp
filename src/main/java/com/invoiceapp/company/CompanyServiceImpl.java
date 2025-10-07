@@ -4,7 +4,11 @@ import com.invoiceapp.company.dto.CompanyCreateRequest;
 import com.invoiceapp.company.dto.CompanyResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CompanyServiceImpl implements CompanyService {
@@ -40,6 +44,17 @@ public class CompanyServiceImpl implements CompanyService {
     public List<CompanyResponse> getAllCompanies() {
         return repo.findAll().stream().map(CompanyResponse::fromEntity).toList();
     }
+
+    @Override
+    public Map<Long, String> getCompanyNamesByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Map.of();
+        return repo.findAllById(ids).stream()
+                .collect(Collectors.toMap(
+                        Company::getId,
+                        Company::getName   // ή το αντίστοιχο getter
+                ));
+    }
+
 
     @Override
     public void deleteCompany(Long id) {

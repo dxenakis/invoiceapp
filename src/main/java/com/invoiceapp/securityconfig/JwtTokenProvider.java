@@ -1,27 +1,23 @@
 package com.invoiceapp.securityconfig;
 
+import com.invoiceapp.user.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import com.invoiceapp.user.User;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.Arrays;
 
 @Component
 public class JwtTokenProvider {
 
-    // Βάλε αυτό το secret σε env var / secrets manager. Για HS512 θέλεις μεγάλο key (π.χ. 64 bytes).
     @Value("${security.jwt.secret-key}")
     private String jwtSecret;
 
-    // Σε milliseconds
+    // διάρκεια σε milliseconds (π.χ. 86400000 = 24h)
     @Value("${security.jwt.expiration-time}")
     private long jwtExpirationMs;
 
@@ -30,52 +26,37 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(User user) {
-        String roles = Optional.ofNullable(user.getRoles())
-                .map(rs -> rs.stream().map(Enum::name).collect(Collectors.joining(",")))
-                .orElse("");
-
+    /** Δημιουργεί JWT για έναν χρήστη με συγκεκριμένο role και ενεργή εταιρεία. */
+    public String generateToken(String username, Role role, Long activeCompanyId) {
         Date now = new Date();
         Date expiry = new Date(System.currentTimeMillis() + jwtExpirationMs);
 
-        return Jwts.builder()
-                .setSubject(user.getUsername())
-                .claim("roles", roles)
-                .claim("companyId", user.getCompanyId())
+        JwtBuilder builder = Jwts.builder()
+                .setSubject(username)
+                .claim("role", role.name())
+                .claim("act_cid", activeCompanyId)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-                .compact();
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512);
+
+        return builder.compact();
     }
 
     public String getUsername(String token) {
         return parseClaims(token).map(Claims::getSubject).orElse(null);
     }
 
-    public Long getCompanyId(String token) {
+    public String getRole(String token) {
         Claims claims = parseClaims(token).orElse(null);
         if (claims == null) return null;
-        Object val = claims.get("companyId");
-        if (val == null) return null;
-        if (val instanceof Number) return ((Number) val).longValue();
-        try {
-            return Long.valueOf(String.valueOf(val));
-        } catch (NumberFormatException ex) {
-            return null;
-        }
+        return (String) claims.get("role");
     }
 
-    public Set<String> getRoles(String token) {
+    public Long getActiveCompanyId(String token) {
         Claims claims = parseClaims(token).orElse(null);
-        if (claims == null) return Set.of();
-        Object rolesObj = claims.get("roles");
-        if (rolesObj == null) return Set.of();
-        String rolesStr = String.valueOf(rolesObj);
-        if (rolesStr.isBlank()) return Set.of();
-        return Arrays.stream(rolesStr.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+        if (claims == null) return null;
+        Object val = claims.get("act_cid");
+        return val == null ? null : Long.valueOf(val.toString());
     }
 
     public boolean validateToken(String token) {
@@ -85,12 +66,9 @@ public class JwtTokenProvider {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (ExpiredJwtException e) {
-            // token expired — μπορείς να το λογκάρεις ξεχωριστά αν θες
         } catch (JwtException | IllegalArgumentException e) {
-            // invalid token
+            return false;
         }
-        return false;
     }
 
     private Optional<Claims> parseClaims(String token) {
