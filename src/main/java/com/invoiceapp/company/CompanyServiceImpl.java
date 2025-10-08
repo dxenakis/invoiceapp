@@ -1,7 +1,11 @@
 package com.invoiceapp.company;
 
+import com.invoiceapp.access.UserCompanyAccessService;
 import com.invoiceapp.company.dto.CompanyCreateRequest;
 import com.invoiceapp.company.dto.CompanyResponse;
+import com.invoiceapp.securityconfig.SecurityUtils;
+import com.invoiceapp.user.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +18,15 @@ import java.util.stream.Collectors;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository repo;
+    private final UserRepository users; // ΝΕΟ
+    private final UserCompanyAccessService access; // ΝΕΟ
 
-    public CompanyServiceImpl(CompanyRepository repo) {
+    public CompanyServiceImpl(CompanyRepository repo,
+                              UserRepository users,
+                              UserCompanyAccessService access) {
         this.repo = repo;
+        this.users = users;
+        this.access = access;
     }
 
     @Transactional
@@ -34,18 +44,31 @@ public class CompanyServiceImpl implements CompanyService {
         return CompanyResponse.fromEntity(repo.save(company));
     }
 
+
     @Override
+    @Transactional(readOnly = true)
     public CompanyResponse getCompanyById(Long id) {
-        return repo.findById(id).map(CompanyResponse::fromEntity)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found"));
+        // 404 αν δεν έχει πρόσβαση
+        SecurityUtils.assertHasAccessOrNotFound(id, access, users);
+
+        Company c = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+
+        return CompanyResponse.fromEntity(c);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CompanyResponse> getAllCompanies() {
-        return repo.findAll().stream().map(CompanyResponse::fromEntity).toList();
+        // μόνο οι εταιρείες που έχει access ο χρήστης
+        var companyIds = SecurityUtils.getAccessibleCompanyIds(access, users);
+        return repo.findAllById(companyIds).stream()
+                .map(CompanyResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<Long, String> getCompanyNamesByIds(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) return Map.of();
         return repo.findAllById(ids).stream()
@@ -57,7 +80,10 @@ public class CompanyServiceImpl implements CompanyService {
 
 
     @Override
+    @Transactional
     public void deleteCompany(Long id) {
+        // πρέπει να είναι COMPANY_ADMIN στη συγκεκριμένη εταιρεία
+        SecurityUtils.requireCompanyAdmin(id, access, users);
         repo.deleteById(id);
     }
 
