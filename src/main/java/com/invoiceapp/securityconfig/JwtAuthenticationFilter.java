@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -47,9 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             );
 
                     // Προαιρετικά: βάζουμε και το companyId στο authentication details
-                    auth.setDetails(new ActiveCompanyDetails(companyId));
-
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    auth.setDetails(new ActiveCompanyDetails(request, companyId)); //περνάμε μέσα στο
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             }
@@ -59,10 +58,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /** Helper για να κουβαλάμε το act_cid μέσα στο SecurityContext */
-    public static class ActiveCompanyDetails {
+    public static class ActiveCompanyDetails extends WebAuthenticationDetails {
         private final Long companyId;
 
-        public ActiveCompanyDetails(Long companyId) {
+        public ActiveCompanyDetails(HttpServletRequest request, Long companyId) {
+            super(request); // κρατά remoteAddress & sessionId
             this.companyId = companyId;
         }
 
