@@ -4,6 +4,7 @@ import com.invoiceapp.access.UserCompanyAccessService;
 import com.invoiceapp.company.dto.CompanyCreateRequest;
 import com.invoiceapp.company.dto.CompanyResponse;
 import com.invoiceapp.securityconfig.SecurityUtils;
+import com.invoiceapp.user.Role;
 import com.invoiceapp.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,8 @@ import java.util.stream.Collectors;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository repo;
-    private final UserRepository users; // ΝΕΟ
-    private final UserCompanyAccessService access; // ΝΕΟ
+    private final UserRepository users;
+    private final UserCompanyAccessService access;
 
     public CompanyServiceImpl(CompanyRepository repo,
                               UserRepository users,
@@ -41,9 +42,15 @@ public class CompanyServiceImpl implements CompanyService {
         company.setCountryCode(req.countryCode());
         company.setEmail(req.email());
         company.setPhone(req.phone());
-        return CompanyResponse.fromEntity(repo.save(company));
-    }
 
+        Company saved = repo.save(company);
+
+        // ✅ Δώσε COMPANY_ADMIN δικαίωμα στον δημιουργό
+        Long currentUserId = SecurityUtils.getCurrentUserIdOrThrow(users);
+        access.grantAccess(currentUserId, saved.getId(), Role.COMPANY_ADMIN);
+
+        return CompanyResponse.fromEntity(saved);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -74,10 +81,9 @@ public class CompanyServiceImpl implements CompanyService {
         return repo.findAllById(ids).stream()
                 .collect(Collectors.toMap(
                         Company::getId,
-                        Company::getName   // ή το αντίστοιχο getter
+                        Company::getName
                 ));
     }
-
 
     @Override
     @Transactional

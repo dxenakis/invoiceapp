@@ -15,51 +15,49 @@ import java.util.Optional;
 public class JwtTokenProvider {
 
     @Value("${security.jwt.secret-key}")
-    private String jwtSecret;
+    private String jwtSecret; // RAW string (βάλε >=32 ascii chars)
 
-    // διάρκεια σε milliseconds (π.χ. 86400000 = 24h)
     @Value("${security.jwt.expiration-time}")
-    private long jwtExpirationMs;
+    private long jwtExpirationMs; // σε ms
 
     private Key getSigningKey() {
-        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("JWT secret (security.jwt.secret-key) is not configured.");
+        }
+        byte[] keyBytes = jwtSecret.trim().getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) { // HS256 => >= 256 bits
+            throw new IllegalStateException("JWT secret must be at least 32 bytes (add a longer value to security.jwt.secret-key).");
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /** Δημιουργεί JWT για έναν χρήστη με συγκεκριμένο role και ενεργή εταιρεία. */
+    /** Token ΧΩΡΙΣ active company (μετά από register ή πριν κάνει switch). */
+    public String generateToken(String username) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + jwtExpirationMs);
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(now)
+                .setExpiration(exp)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /** Token ΜΕ ρόλο & ενεργή εταιρεία. */
     public String generateToken(String username, Role role, Long activeCompanyId) {
         Date now = new Date();
-        Date expiry = new Date(System.currentTimeMillis() + jwtExpirationMs);
-
-        JwtBuilder builder = Jwts.builder()
+        Date exp = new Date(now.getTime() + jwtExpirationMs);
+        return Jwts.builder()
                 .setSubject(username)
-                .claim("role", role.name())
+                .claim("role", role != null ? role.name() : null)
                 .claim("act_cid", activeCompanyId)
                 .setIssuedAt(now)
-                .setExpiration(expiry)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512);
-
-        return builder.compact();
+                .setExpiration(exp)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
-    public String getUsername(String token) {
-        return parseClaims(token).map(Claims::getSubject).orElse(null);
-    }
-
-    public String getRole(String token) {
-        Claims claims = parseClaims(token).orElse(null);
-        if (claims == null) return null;
-        return (String) claims.get("role");
-    }
-
-    public Long getActiveCompanyId(String token) {
-        Claims claims = parseClaims(token).orElse(null);
-        if (claims == null) return null;
-        Object val = claims.get("act_cid");
-        return val == null ? null : Long.valueOf(val.toString());
-    }
-
-    public boolean validateToken(String token) {
+    public boolean validate(String token) {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
@@ -69,6 +67,22 @@ public class JwtTokenProvider {
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    public Optional<String> getUsername(String token) {
+        return parseClaims(token).map(Claims::getSubject);
+    }
+
+    public Optional<Role> getRole(String token) {
+        return parseClaims(token)
+                .map(c -> c.get("role", String.class))
+                .map(s -> s == null ? null : Role.valueOf(s));
+    }
+
+    public Optional<Long> getActiveCompanyId(String token) {
+        return parseClaims(token)
+                .map(c -> c.get("act_cid"))
+                .map(v -> v == null ? null : Long.valueOf(String.valueOf(v)));
     }
 
     private Optional<Claims> parseClaims(String token) {

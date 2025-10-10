@@ -17,51 +17,46 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider tokenProvider;
+    private final JwtTokenProvider jwt;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
-        this.tokenProvider = tokenProvider;
+    public JwtAuthenticationFilter(JwtTokenProvider jwt) {
+        this.jwt = jwt;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
-
+        String header = req.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
 
-            if (tokenProvider.validateToken(token)) {
-                String username = tokenProvider.getUsername(token);
-                String role = tokenProvider.getRole(token);
-                Long companyId = tokenProvider.getActiveCompanyId(token);
+            if (jwt.validate(token)) {
+                String username = jwt.getUsername(token).orElse(null);
+                var roleOpt = jwt.getRole(token);
+                var companyIdOpt = jwt.getActiveCompanyId(token);
 
-                if (username != null && role != null) {
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(
-                                    username,
-                                    null,
-                                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                            );
+                if (username != null) {
+                    var authorities = roleOpt
+                            .map(r -> List.of(new SimpleGrantedAuthority("ROLE_" + r.name())))
+                            .orElse(List.of(new SimpleGrantedAuthority("ROLE_USER"))); // default
 
-                    // Προαιρετικά: βάζουμε και το companyId στο authentication details
-                    auth.setDetails(new ActiveCompanyDetails(request, companyId)); //περνάμε μέσα στο
+                    var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    auth.setDetails(new ActiveCompanyDetails(req, companyIdOpt.orElse(null)));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             }
         }
 
-        filterChain.doFilter(request, response);
+        chain.doFilter(req, res);
     }
 
-    /** Helper για να κουβαλάμε το act_cid μέσα στο SecurityContext */
+    /** Κουβαλάμε το act_cid μέσα στο SecurityContext */
     public static class ActiveCompanyDetails extends WebAuthenticationDetails {
         private final Long companyId;
 
         public ActiveCompanyDetails(HttpServletRequest request, Long companyId) {
-            super(request); // κρατά remoteAddress & sessionId
+            super(request);
             this.companyId = companyId;
         }
 

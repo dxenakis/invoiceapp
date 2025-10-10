@@ -4,10 +4,10 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import org.springframework.security.access.AccessDeniedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -16,30 +16,29 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
-                "UserAlreadyExistsException",
+                "UserAlreadyExists",
                 ex.getMessage(),
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+    @ExceptionHandler({IllegalArgumentException.class, BadCredentialsException.class})
+    public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "IllegalArgumentException",
+                ex.getClass().getSimpleName(),
                 ex.getMessage(),
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
-    public record ErrorResponse(int status, String error, String message, String path) {}
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(EntityNotFoundException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                "EntityNotFoundException",
+                "EntityNotFound",
                 ex.getMessage(),
                 request.getRequestURI()
         );
@@ -56,4 +55,11 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex, HttpServletRequest req) {
+        ErrorResponse err = new ErrorResponse(422, "MissingContext", ex.getMessage(), req.getRequestURI());
+        return ResponseEntity.status(422).body(err);
+    }
+
 }
