@@ -61,5 +61,19 @@ public class GlobalExceptionHandler {
         ErrorResponse err = new ErrorResponse(422, "MissingContext", ex.getMessage(), req.getRequestURI());
         return ResponseEntity.status(422).body(err);
     }
+    // com.invoiceapp.exception.GlobalExceptionHandler.java
+    @ExceptionHandler(CompanyAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleCompanyAlreadyExists(
+            CompanyAlreadyExistsException ex,
+            HttpServletRequest request
+    ) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "CompanyAlreadyExists",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
 
 }

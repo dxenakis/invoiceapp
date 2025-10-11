@@ -3,6 +3,7 @@ package com.invoiceapp.company;
 import com.invoiceapp.access.UserCompanyAccessService;
 import com.invoiceapp.company.dto.CompanyCreateRequest;
 import com.invoiceapp.company.dto.CompanyResponse;
+import com.invoiceapp.exception.CompanyAlreadyExistsException;
 import com.invoiceapp.securityconfig.SecurityUtils;
 import com.invoiceapp.user.Role;
 import com.invoiceapp.user.UserRepository;
@@ -33,6 +34,16 @@ public class CompanyServiceImpl implements CompanyService {
     @Transactional
     @Override
     public CompanyResponse createCompany(CompanyCreateRequest req) {
+
+        // 1) Προληπτικός έλεγχος
+        String afm = req.afm().trim();
+        if (repo.existsByAfm(afm)) {
+            throw new CompanyAlreadyExistsException(
+                    "Company with AFM %s already exists".formatted(afm)
+            );
+        }
+
+
         Company company = new Company();
         company.setAfm(req.afm());
         company.setName(req.name());
