@@ -2,12 +2,10 @@ package com.invoiceapp.access;
 
 import com.invoiceapp.user.Role;
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
 
 @Entity
-@Table(
-        name = "user_company_access", // snake_case για SQL
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id","company_id"})
-)
+@Table(name = "user_company_access") // snake_case για SQL
 public class UserCompanyAccess {
 
     @Id
@@ -16,6 +14,7 @@ public class UserCompanyAccess {
 
     @Column(name = "user_id", nullable = false)  // snake_case στη βάση
     private Long userId;
+
 
     @Column(name = "company_id", nullable = false) // snake_case στη βάση
     private Long companyId;

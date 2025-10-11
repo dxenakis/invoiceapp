@@ -9,9 +9,12 @@ import com.invoiceapp.user.Role;
 import com.invoiceapp.user.User;
 import com.invoiceapp.user.UserRepository;
 import com.invoiceapp.user.UserStatus;
+import com.invoiceapp.company.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,17 +29,20 @@ public class AuthService {
     private final AuthenticationManager authManager;
     private final JwtTokenProvider jwt;
     private final UserCompanyAccessService access;
+    private final CompanyRepository companyRepo;
 
     public AuthService(UserRepository users,
                        PasswordEncoder encoder,
                        AuthenticationManager authManager,
                        JwtTokenProvider jwt,
-                       UserCompanyAccessService access) {
+                       UserCompanyAccessService access,
+                       CompanyRepository companyRepo) {
         this.users = users;
         this.encoder = encoder;
         this.authManager = authManager;
         this.jwt = jwt;
         this.access = access;
+        this.companyRepo = companyRepo;
     }
 
     // 🔑 LOGIN
@@ -116,12 +122,25 @@ public class AuthService {
     // 🔁 Switch Company
     @Transactional(readOnly = true)
     public String switchCompany(String username, Long companyId) {
+        // 1) Βασικός έλεγχος input
+        if (companyId == null || companyId <= 0) {
+            throw new IllegalArgumentException("Invalid companyId");
+        }
+
+        // 2) Βρες χρήστη (404/401 ανά exception mapping σου)
         User user = users.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
+        // 3) Επιβεβαίωσε ότι η εταιρεία υπάρχει (GLOBAL entity, χωρίς @TenantId)
+        if (!companyRepo.existsById(companyId)) {
+            throw new IllegalArgumentException("Company not found: " + companyId);
+        }
+
+        // 4) Έλεγχος πρόσβασης του χρήστη στην εταιρεία (GLOBAL πίνακας UserCompanyAccess)
         Role role = access.roleFor(user.getId(), companyId)
-                .orElseThrow(() -> new IllegalArgumentException("User has no access to the requested company"));
+                .orElseThrow(() -> new AccessDeniedException("User has no access to company " + companyId));
 
+        // 5) Έκδοση ΝΕΟΥ token με πραγματικό companyId (ποτέ -1/0)
         return jwt.generateToken(user.getUsername(), role, companyId);
     }
 }

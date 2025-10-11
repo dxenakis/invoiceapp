@@ -23,7 +23,13 @@ public class AuthController {
     }
 
     @PostMapping("/switch-company")
-    public ResponseEntity<AuthResponse> switchCompany(@RequestBody SwitchCompanyRequest req, Principal principal) {
+    public ResponseEntity<AuthResponse> switchCompany(@Valid @RequestBody SwitchCompanyRequest req,
+                                                      Principal principal) {
+        // basic guard για null/μη έγκυρο id -> 400
+        if (req.companyId() == null || req.companyId() <= 0) {
+            throw new IllegalArgumentException("Invalid companyId");
+        }
+
         String username = principal.getName();
         String newToken = auth.switchCompany(username, req.companyId());
         return ResponseEntity.ok(new AuthResponse(newToken));
