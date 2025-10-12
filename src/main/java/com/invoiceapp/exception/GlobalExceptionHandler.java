@@ -75,5 +75,13 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
+    @ExceptionHandler(MissingTenantException.class)
+    public ResponseEntity<?> handleMissingTenant(MissingTenantException ex) {
+        // Μπορείς να επιστρέφεις 401 ή 400 (ή 422), ανάλογα με την πολιτική σου
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiError("missing_tenant", ex.getMessage()));
+    }
+
+    public record ApiError(String code, String message) {}
 
 }
