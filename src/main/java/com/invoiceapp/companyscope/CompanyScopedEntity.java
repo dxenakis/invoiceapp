@@ -7,6 +7,7 @@ import org.hibernate.annotations.TenantId;
 /**
  * Base για ΟΛΑ τα per-company entities.
  * Τα GLOBAL entities (π.χ. Company) ΔΕΝ κληρονομούν αυτό.
+ * Όλα τα entities που δεν είναι “παγκόσμια” (global) πρέπει να κάνουν extends CompanyScopedEntity.
  */
 @MappedSuperclass
 public abstract class CompanyScopedEntity {
