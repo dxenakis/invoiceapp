@@ -5,6 +5,8 @@ import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.Effect;
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 
 @Entity
 @Table(
@@ -69,6 +71,20 @@ public class ItePrms {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Effect salval;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    @Column(nullable = false)
+    private Instant updatedAt = Instant.now();
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
 
 
     // Getters & Setters
@@ -166,6 +182,30 @@ public class ItePrms {
 
     public void setSalval(Effect salval) {
         this.salval = salval;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
 
