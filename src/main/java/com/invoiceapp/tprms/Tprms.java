@@ -12,7 +12,7 @@ import java.time.Instant;
         name = "tprms",
         uniqueConstraints = @UniqueConstraint(name = "uk_tprms_code", columnNames = "code")
 )
-public class TPRMS {
+public class Tprms {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -81,9 +81,9 @@ public class TPRMS {
     public void setCode(String code) { this.code = code; }
     public void setDescription(String description) { this.description = description; }
     public void setDomain(DocumentDomain domain) { this.domain = domain; }
-    public void setDebitEffect(Effect debit) { this.debit = debit; }
-    public void setCreditEffect(Effect credit) { this.credit = credit; }
-    public void setTurnoverEffect(Effect turnover) { this.turnover = turnover; }
+    public void setDebit(Effect debit) { this.debit = debit; }
+    public void setCredit(Effect credit) { this.credit = credit; }
+    public void setTurnover(Effect turnover) { this.turnover = turnover; }
     public void setSign(Sign sign) { this.sign = sign; }
     public void setActive(boolean active) { this.active = active; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
