@@ -1,12 +1,15 @@
 package com.invoiceapp.tprms;
 
 
+import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.tprms.dto.TprmsCreateRequest;
 import com.invoiceapp.tprms.dto.TprmsUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tprms")
@@ -28,6 +31,11 @@ public class TprmsController {
     public Page<Tprms> list(Pageable pageable,
                             @RequestParam(defaultValue = "false") boolean onlyActive) {
         return service.list(pageable, onlyActive);
+    }
+
+    @GetMapping("/{domain}")
+    public List<Tprms> getByDomain(@PathVariable DocumentDomain domain) {
+        return service.getByDomain(domain);
     }
 
     @GetMapping("/{id}")

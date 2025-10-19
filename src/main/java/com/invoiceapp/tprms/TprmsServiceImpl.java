@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class TprmsServiceImpl implements TprmsService {
@@ -66,6 +68,13 @@ public class TprmsServiceImpl implements TprmsService {
     public Tprms get(Long id) {
         return repo.findById(id).orElseThrow(() -> new IllegalArgumentException("TPRMS not found: id=" + id));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Tprms> getByDomain(DocumentDomain domain) {
+        return repo.findAllByDomain(domain);
+    }
+
 
     @Override
     public Tprms update(Long id, TprmsUpdateRequest req) {

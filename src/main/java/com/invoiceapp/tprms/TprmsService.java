@@ -1,9 +1,12 @@
 package com.invoiceapp.tprms;
 
+import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.tprms.dto.TprmsCreateRequest;
 import com.invoiceapp.tprms.dto.TprmsUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface TprmsService {
 
@@ -14,7 +17,7 @@ public interface TprmsService {
     Tprms get(Long id);
 
     Tprms update(Long id, TprmsUpdateRequest req);
-
+    List <Tprms> getByDomain(DocumentDomain domain);
     /** Soft delete: active=false (αν θες hard delete, κάνε deleteById) */
     void delete(Long id);
 }

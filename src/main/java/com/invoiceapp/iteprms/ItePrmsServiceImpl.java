@@ -1,5 +1,6 @@
 package com.invoiceapp.iteprms;
 
+import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.iteprms.dto.ItePrmsCreateRequest;
 import com.invoiceapp.iteprms.dto.ItePrmsUpdateRequest;
 import com.invoiceapp.tprms.Tprms;
@@ -10,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -64,6 +67,13 @@ public class ItePrmsServiceImpl implements ItePrmsService{
     public ItePrms get(Long id) {
         return repo.findById(id).orElseThrow(() -> new IllegalArgumentException("ITEPRMS not found: id=" + id));
     }
+
+    @Override
+    @Transactional
+    public List<ItePrms> findAllByDomain(DocumentDomain documentDomain){
+        return  repo.findAllByDomain(documentDomain);
+    }
+
     @Override
     public ItePrms update(Long id, ItePrmsUpdateRequest req) {
         ItePrms e = get(id);

@@ -1,6 +1,7 @@
 package com.invoiceapp.iteprms;
 
 
+import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.iteprms.dto.ItePrmsCreateRequest;
 import com.invoiceapp.iteprms.dto.ItePrmsUpdateRequest;
 import com.invoiceapp.tprms.Tprms;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/iteprms")
@@ -42,6 +45,10 @@ public class ItePrmsController {
     @PutMapping("/{id}")
     public ItePrms update(@PathVariable Long id, @RequestBody ItePrmsUpdateRequest req) {
         return service.update(id, req);
+    }
+    @GetMapping("/{domain}")
+    public List<ItePrms> getByDomain(@PathVariable DocumentDomain domain) {
+        return service.findAllByDomain(domain);
     }
 
     @DeleteMapping("/{id}")

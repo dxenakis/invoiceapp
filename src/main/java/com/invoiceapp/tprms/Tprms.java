@@ -7,6 +7,13 @@ import com.invoiceapp.global.DocumentDomain;
 import jakarta.persistence.*;
 import java.time.Instant;
 
+
+/*
+ * tprms αναπαριστά την κίνηση που θα προκαλεί το παραστατικό που το φέρει, στο κύκλωμα των συναλλασόμενων.
+ * Στην ουσία επηρεάζει τα πεδία, χρέωσης, πίστωσης και τζίρου.
+ *
+ * */
+
 @Entity
 @Table(
         name = "tprms",
