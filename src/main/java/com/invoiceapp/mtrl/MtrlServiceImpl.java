@@ -1,4 +1,4 @@
-package com.invoiceapp.item;
+package com.invoiceapp.mtrl;
 
 
 import com.invoiceapp.companyscope.RequireTenant;
@@ -14,20 +14,20 @@ import java.util.List;
 @Service
 @Transactional
 @RequireTenant // Εξασφαλίζει ότι υπάρχει active tenant (companyId) σε ΟΛΕΣ τις μεθόδους του service
-public class ItemServiceImpl implements ItemService {
+public class MtrlServiceImpl implements MtrlService {
 
 
-    private final ItemRepository repo;
+    private final MtrlRepository repo;
 
 
-    public ItemServiceImpl(ItemRepository repo) {
+    public MtrlServiceImpl(MtrlRepository repo) {
         this.repo = repo;
     }
 
 
     @Override
     @Transactional(readOnly = true)
-    public List<Item> listAll() {
+    public List<Mtrl> listAll() {
 // Το Hibernate εφαρμόζει αυτόματα το tenant filter (μέσω @TenantId στο Item)
         return repo.findAll();
     }
@@ -35,14 +35,14 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
-    public Item getById(Long id) {
+    public Mtrl getById(Long id) {
         return repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
     }
 
 
     @Override
-    public Item create(Item incoming) {
+    public Mtrl create(Mtrl incoming) {
 // Μην πειράζεις companyId εδώ· με @TenantId θα συμπληρωθεί από το Session.
 // Αν το entity σου ΔΕΝ έχει @TenantId, πρόσθεσέ το εκεί (π.χ. private Long companyId με @TenantId).
         return repo.save(incoming);
@@ -50,8 +50,8 @@ public class ItemServiceImpl implements ItemService {
 
 
     @Override
-    public Item update(Long id, Item patch) {
-        Item existing = getById(id); // already tenant-filtered
+    public Mtrl update(Long id, Mtrl patch) {
+        Mtrl existing = getById(id); // already tenant-filtered
 
 
         return existing;

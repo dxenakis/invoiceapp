@@ -1,4 +1,4 @@
-package com.invoiceapp.item;
+package com.invoiceapp.mtrl;
 
 import com.invoiceapp.companyscope.RequireTenant;
 import jakarta.validation.Valid;
@@ -12,43 +12,43 @@ import java.util.List;
 @RestController
 @RequestMapping("/items")
 @RequireTenant // απαιτεί ενεργό tenant και σε επίπεδο controller
-public class ItemController {
+public class MtrlController {
 
 
-    private final ItemService service;
+    private final MtrlService service;
 
 
-    public ItemController(ItemService service) {
+    public MtrlController(MtrlService service) {
         this.service = service;
     }
 
 
     // LIST
     @GetMapping
-    public ResponseEntity<List<Item>> listAll() {
+    public ResponseEntity<List<Mtrl>> listAll() {
         return ResponseEntity.ok(service.listAll());
     }
 
 
     // GET
     @GetMapping("/{id}")
-    public ResponseEntity<Item> get(@PathVariable Long id) {
+    public ResponseEntity<Mtrl> get(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
 
     // CREATE
     @PostMapping
-    public ResponseEntity<Item> create(@Valid @RequestBody Item request) {
-        Item created = service.create(request);
+    public ResponseEntity<Mtrl> create(@Valid @RequestBody Mtrl request) {
+        Mtrl created = service.create(request);
         return ResponseEntity.created(URI.create("/items/" + created.getId())).body(created);
     }
 
 
     // UPDATE (full/partial, εδώ χειριζόμαστε σαν PATCH μέσω πεδίων που δεν είναι null/0)
     @PutMapping("/{id}")
-    public ResponseEntity<Item> update(@PathVariable Long id,
-                                       @Valid @RequestBody Item request) {
+    public ResponseEntity<Mtrl> update(@PathVariable Long id,
+                                       @Valid @RequestBody Mtrl request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 

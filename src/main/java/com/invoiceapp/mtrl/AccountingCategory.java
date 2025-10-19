@@ -1,4 +1,4 @@
-package com.invoiceapp.item;
+package com.invoiceapp.mtrl;
 
 public enum AccountingCategory {
     EMPOREVMATA("Εμπορεύματα"),

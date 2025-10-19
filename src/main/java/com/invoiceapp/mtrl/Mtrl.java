@@ -1,4 +1,4 @@
-package com.invoiceapp.item;
+package com.invoiceapp.mtrl;
 
 
 import jakarta.persistence.*;
@@ -6,12 +6,12 @@ import org.hibernate.annotations.TenantId;
 
 @Entity
 @Table(
-        name = "items",
+        name = "mtrl",
         indexes = {
-                @Index(name = "idx_items_company", columnList = "company_id")
+                @Index(name = "idx_mtrl_company", columnList = "company_id")
         }
 )
-public class Item {
+public class Mtrl {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
