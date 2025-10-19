@@ -1,0 +1,18 @@
+package com.invoiceapp.documenttype.dto;
+
+import com.invoiceapp.global.DocumentDomain;
+import java.time.LocalDateTime;
+
+public record DocumentTypeResponse(
+        Long id,
+        Long companyId,
+        String code,
+        String description,
+        DocumentDomain domain,
+        Long tprmsId,
+        String tprmsCode,
+        Long iteprmsId,
+        String iteprmsCode,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {}
