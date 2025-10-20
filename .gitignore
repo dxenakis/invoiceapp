@@ -35,3 +35,6 @@ build/
 
 # Spring Boot sensitive files
 /src/main/resources/application.properties
+
+# Spring Boot sensitive files
+/src/main/resources/Context.md
