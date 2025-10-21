@@ -4,6 +4,8 @@ package com.invoiceapp.mtrl;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
 
+import java.time.Instant;
+
 @Entity
 @Table(
         name = "mtrl",
@@ -22,6 +24,8 @@ public class Mtrl {
     @Column(name = "company_id", nullable = false, updatable = false)
     private Long companyId;
 
+    @Column(name = "code", nullable = false, length = 200)
+    private String code;
     @Column(name = "name", nullable = false, length = 200)
     private String name;
     @Column(name = "name1",length = 200)
@@ -32,6 +36,20 @@ public class Mtrl {
     private float pricer;
     @Column(name = "pricew")
     private float pricew;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    @Column(nullable = false)
+    private Instant updatedAt = Instant.now();
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
 
     public float getPricew() {
         return pricew;
@@ -64,7 +82,7 @@ public class Mtrl {
     public void setName1(String name1) {
         this.name1 = name1;
     }
-
+    public String getCode(){ return  this.code;}
     public String getName() {
         return name;
     }
@@ -72,7 +90,7 @@ public class Mtrl {
     public void setName(String name) {
         this.name = name;
     }
-
+    public void setCode(String code) { this.code = code;}
     public Long getCompanyId() {
         return companyId;
     }
@@ -87,5 +105,29 @@ public class Mtrl {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

@@ -15,7 +15,7 @@ public interface MtrlRepository extends JpaRepository<Mtrl, Long> {
     @Override
     List<Mtrl> findAll();
 
-
+    boolean existsByCode(String code);
     @Override
     <S extends Mtrl> S save(S entity);
 }

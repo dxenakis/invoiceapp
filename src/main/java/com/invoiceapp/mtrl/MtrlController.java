@@ -1,7 +1,12 @@
 package com.invoiceapp.mtrl;
 
 import com.invoiceapp.companyscope.RequireTenant;
+import com.invoiceapp.documenttype.dto.DocumentTypeResponse;
+import com.invoiceapp.mtrl.dto.MtrlRequest;
+import com.invoiceapp.mtrl.dto.MtrlResponse;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,30 +30,31 @@ public class MtrlController {
 
     // LIST
     @GetMapping
-    public ResponseEntity<List<Mtrl>> listAll() {
-        return ResponseEntity.ok(service.listAll());
+    public ResponseEntity<Page<MtrlResponse>> listAll(Pageable pageable) {
+        return ResponseEntity.ok(service.listAll(pageable));
     }
+
 
 
     // GET
     @GetMapping("/{id}")
-    public ResponseEntity<Mtrl> get(@PathVariable Long id) {
+    public ResponseEntity<MtrlResponse> get(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
 
     // CREATE
     @PostMapping
-    public ResponseEntity<Mtrl> create(@Valid @RequestBody Mtrl request) {
-        Mtrl created = service.create(request);
-        return ResponseEntity.created(URI.create("/items/" + created.getId())).body(created);
+    public ResponseEntity<MtrlResponse> create(@Valid @RequestBody MtrlRequest request) {
+        MtrlResponse created = service.create(request);
+        return ResponseEntity.created(URI.create("/items/" + created.id())).body(created);
     }
 
 
     // UPDATE (full/partial, εδώ χειριζόμαστε σαν PATCH μέσω πεδίων που δεν είναι null/0)
     @PutMapping("/{id}")
-    public ResponseEntity<Mtrl> update(@PathVariable Long id,
-                                       @Valid @RequestBody Mtrl request) {
+    public ResponseEntity<MtrlResponse> update(@PathVariable Long id,
+                                       @Valid @RequestBody MtrlRequest request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 
