@@ -3,6 +3,7 @@ package com.invoiceapp.mtrl.dto;
 import com.invoiceapp.mtrl.AccountingCategory;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 public record MtrlResponse(
         Long id,
@@ -14,6 +15,6 @@ public record MtrlResponse(
         float pricer,
         float pricew,
         Boolean active,
-        Instant createdAt,
-        Instant updatedAt) {
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt) {
 }

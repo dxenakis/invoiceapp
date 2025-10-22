@@ -4,6 +4,7 @@ import com.invoiceapp.mtrl.AccountingCategory;
 import jakarta.persistence.Column;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 public record MtrlRequest(
         String code,
@@ -13,7 +14,7 @@ public record MtrlRequest(
         float pricer,
         float pricew,
         Boolean active,
-        Instant createdAt,
-        Instant updatedAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }
