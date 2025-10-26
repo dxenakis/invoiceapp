@@ -8,14 +8,14 @@ import com.invoiceapp.global.Sign;
 public record ItePrmsCreateRequest(
         String code,
         String description,
-        DocumentDomain domain,
-        Effect impqty,
-        Effect impval,
-        Effect expqty,
-        Effect expval,
-        Effect purqty,
-        Effect purval,
-        Effect salqty,
-        Effect salval,
+        Integer domain,
+        Integer impqty,
+        Integer impval,
+        Integer expqty,
+        Integer expval,
+        Integer purqty,
+        Integer purval,
+        Integer salqty,
+        Integer salval,
         Boolean active
 ) {}

@@ -8,7 +8,7 @@ public record DocumentTypeResponse(
         Long companyId,
         String code,
         String description,
-        DocumentDomain domain,
+        Integer domain,
         Long tprmsId,
         String tprmsCode,
         Long iteprmsId,

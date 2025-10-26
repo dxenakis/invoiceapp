@@ -1,6 +1,7 @@
 package com.invoiceapp.iteprms;
 
 import com.invoiceapp.global.DocumentDomain;
+import com.invoiceapp.global.Effect;
 import com.invoiceapp.iteprms.dto.ItePrmsCreateRequest;
 import com.invoiceapp.iteprms.dto.ItePrmsUpdateRequest;
 import com.invoiceapp.tprms.Tprms;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.print.Doc;
 import java.util.List;
 
 @Service
@@ -44,15 +46,15 @@ public class ItePrmsServiceImpl implements ItePrmsService{
         ItePrms e = new ItePrms();
         e.setCode(req.code());
         e.setDescription(req.description());
-        e.setDomain(req.domain());
-        e.setImpqty(req.impqty());
-        e.setImpval(req.impval());
-        e.setExpqty(req.expqty());
-        e.setExpval(req.expval());
-        e.setPurqty(req.purqty());
-        e.setPurval(req.purval());
-        e.setSalqty(req.salqty());
-        e.setSalval(req.salval());
+        e.setDomain(DocumentDomain.fromCode(req.domain()));
+        e.setImpqty(Effect.fromCode(req.impqty()));
+        e.setImpval(Effect.fromCode(req.impval()));
+        e.setExpqty(Effect.fromCode(req.expqty()));
+        e.setExpval(Effect.fromCode(req.expval()));
+        e.setPurqty(Effect.fromCode(req.purqty()));
+        e.setPurval(Effect.fromCode(req.purval()));
+        e.setSalqty(Effect.fromCode(req.salqty()));
+        e.setSalval(Effect.fromCode(req.salval()));
         if (req.active() != null) e.setActive(req.active());
 
         return repo.save(e);
@@ -82,32 +84,32 @@ public class ItePrmsServiceImpl implements ItePrmsService{
             e.setDescription(req.description());
         }
         if (req.domain() != null) {
-            e.setDomain(req.domain());
+            e.setDomain(DocumentDomain.fromCode(req.domain()));
         }
         if (req.impqty() != null) {
-            e.setImpqty(req.impqty());
+            e.setImpqty(Effect.fromCode(req.impqty()));
         }
         if (req.impval() != null) {
-            e.setImpval(req.impval());
+            e.setImpval(Effect.fromCode(req.impval()));
         }
         if (req.expqty() != null) {
-            e.setExpqty(req.expqty());
+            e.setExpqty(Effect.fromCode(req.expqty()));
         }
         if (req.expval() != null) {
-            e.setExpval(req.expval());
+            e.setExpval(Effect.fromCode(req.expval()));
         }
 
         if (req.purqty() != null) {
-            e.setPurqty(req.purqty());
+            e.setPurqty(Effect.fromCode(req.purqty()));
         }
         if (req.purval() != null) {
-            e.setPurval(req.purval());
+            e.setPurval(Effect.fromCode(req.purval()));
         }
         if (req.salqty() != null) {
-            e.setSalqty(req.salqty());
+            e.setSalqty(Effect.fromCode(req.salqty()));
         }
         if (req.salval() != null) {
-            e.setSalval(req.salval());
+            e.setSalval(Effect.fromCode(req.salval()));
         }
 
 

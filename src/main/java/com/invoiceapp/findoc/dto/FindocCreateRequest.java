@@ -9,5 +9,5 @@ public record FindocCreateRequest(
         Long seriesId,
         Long customerId,
         LocalDate documentDate,
-        DocumentDomain documentDomain
+        Integer documentDomain
 ) {}

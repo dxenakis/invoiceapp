@@ -7,10 +7,10 @@ import com.invoiceapp.global.Sign;
 public record TprmsCreateRequest(
         String code,
         String description,
-        DocumentDomain domain,
-        Effect debit,
-        Effect credit,
-        Effect turnover,
-        Sign sign,
+        Integer domain,
+        Integer debit,
+        Integer credit,
+        Integer turnover,
+        Integer sign,
         Boolean active
 ) {}

@@ -14,7 +14,7 @@ public record FindocResponse(
         Long documentTypeId,
         Long branchId,
         Long seriesId,
-        DocumentDomain documentDomain,
+        Integer documentDomain,
         Integer fiscalYear,
         Long number,
         String printedNumber,

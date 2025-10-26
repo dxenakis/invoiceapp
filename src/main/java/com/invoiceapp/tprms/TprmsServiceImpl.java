@@ -47,11 +47,11 @@ public class TprmsServiceImpl implements TprmsService {
         Tprms e = new Tprms();
         e.setCode(req.code());
         e.setDescription(req.description());
-        e.setDomain(req.domain());
-        e.setDebit(req.debit());
-        e.setCredit(req.credit());
-        e.setTurnover(req.turnover());
-        e.setSign(req.sign());
+        e.setDomain(DocumentDomain.fromCode(req.domain()));
+        e.setDebit(Effect.fromCode(req.debit()));
+        e.setCredit(Effect.fromCode(req.credit()));
+        e.setTurnover(Effect.fromCode(req.turnover()));
+        e.setSign(Sign.fromCode(req.sign()));
         if (req.active() != null) e.setActive(req.active());
 
         return repo.save(e);
@@ -84,19 +84,19 @@ public class TprmsServiceImpl implements TprmsService {
             e.setDescription(req.description());
         }
         if (req.domain() != null) {
-            e.setDomain(req.domain());
+            e.setDomain(DocumentDomain.fromCode(req.domain()));
         }
         if (req.debit() != null) {
-            e.setDebit(req.debit());
+            e.setDebit(Effect.fromCode(req.debit()));
         }
         if (req.credit() != null) {
-            e.setCredit(req.credit());
+            e.setCredit(Effect.fromCode(req.credit()));
         }
         if (req.turnover() != null) {
-            e.setTurnover(req.turnover());
+            e.setTurnover(Effect.fromCode(req.turnover()));
         }
         if (req.sign() != null) {
-            e.setSign(req.sign());
+            e.setSign(Sign.fromCode(req.sign()));
         }
         if (req.active() != null) {
             e.setActive(req.active());

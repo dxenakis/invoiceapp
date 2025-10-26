@@ -40,7 +40,7 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
                 e.getCompanyId(),
                 e.getCode(),
                 e.getDescription(),
-                e.getDomain(),
+                e.getDomain().getCode(),
                 e.getTprms() != null ? e.getTprms().getId() : null,
                 e.getTprms() != null ? e.getTprms().getCode() : null,
                 e.getItePrms() != null ? e.getItePrms().getId() : null,
@@ -53,7 +53,7 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
     private static void apply(DocumentType e, DocumentTypeRequest req, Tprms tprms, ItePrms itePrms) {
         e.setCode(req.code());
         e.setDescription(req.description());
-        e.setDomain(req.domain());
+        e.setDomain(DocumentDomain.fromCode(req.domain()));
         e.setTprms(tprms);
         e.setItePrms(itePrms);
     }
@@ -130,7 +130,7 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
         }
 
         if (StringUtils.hasText(request.description())) e.setDescription(request.description());
-        if (request.domain() != null) e.setDomain(request.domain());
+        if (request.domain() != null) e.setDomain(DocumentDomain.fromCode(request.domain()));
 
         if (request.tprmsId() != null) {
             Tprms tprms = tprmsRepository.findById(request.tprmsId())

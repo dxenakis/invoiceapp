@@ -7,6 +7,7 @@ import com.invoiceapp.documenttype.DocumentTypeRepository;
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
 import com.invoiceapp.findoc.dto.MtrLineRequest;
+import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.DocumentStatus;
 import com.invoiceapp.mtrl.Mtrl;
 import com.invoiceapp.mtrl.MtrlRepository;
@@ -93,7 +94,7 @@ public class FindocServiceImpl implements FindocService {
         f.setBranch(branch);
         f.setCustomer(customer);
         f.setDocumentDate(docDate);
-        f.setDocumentDomain(req.documentDomain());
+        f.setDocumentDomain(DocumentDomain.fromCode(req.documentDomain()));
         f.setStatus(DocumentStatus.DRAFT);
         return toDto(findocRepo.save(f));
     }
@@ -273,7 +274,7 @@ public class FindocServiceImpl implements FindocService {
                 e.getDocumentType() != null ? e.getDocumentType().getId() : null,
                 e.getBranch() != null ? e.getBranch().getId() : null,
                 e.getSeries() != null ? e.getSeries().getId() : null,
-                e.getDocumentDomain(),
+                e.getDocumentDomain().getCode(),
                 e.getFiscalYear(),
                 e.getNumber(),
                 e.getPrintedNumber(),

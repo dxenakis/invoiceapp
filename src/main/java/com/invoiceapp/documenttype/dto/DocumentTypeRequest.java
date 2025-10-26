@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 public record DocumentTypeRequest(
         @NotBlank String code,
         @NotBlank String description,
-        @NotNull DocumentDomain domain,
+        @NotNull Integer domain,
         @NotNull Long tprmsId,
         Long iteprmsId // προαιρετικό
 ) {}

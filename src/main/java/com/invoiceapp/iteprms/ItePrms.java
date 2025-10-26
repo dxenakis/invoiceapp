@@ -3,6 +3,8 @@ package com.invoiceapp.iteprms;
 
 import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.Effect;
+import com.invoiceapp.global.jpa.DocumentDomainConverter;
+import com.invoiceapp.global.jpa.EffectConverter;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -32,48 +34,48 @@ public class ItePrms {
     private String description;
 
     /** Αγορές/Πωλήσεις/Εισπράξεις/Πληρωμές */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = DocumentDomainConverter.class)
     @Column(nullable = false, length = 20)
     private DocumentDomain domain;
 
     /** Επίδραση στη Ποσότητα Εισαγώγών */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect impqty;
 
     /** Επίδραση στη αξία Εισαγώγών */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect impval;
 
     /** Επίδραση στη Ποσότητα Εξαγωγών */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect expqty;
 
     /** Επίδραση στη αξία Εξαγωγών */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect expval;
 
 
     /** Επίδραση στη Ποσότητα Αγορών */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect purqty;
 
     /** Επίδραση στη αξία Αγορών */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect purval;
 
     /** Επίδραση στη Ποσότητα Πωλήσεων */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect salqty;
 
     /** Επίδραση στη αξία Πωλήσεων */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect salval;
 

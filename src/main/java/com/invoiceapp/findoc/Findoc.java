@@ -5,6 +5,7 @@ import com.invoiceapp.customer.Customer;
 import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.DocumentStatus;
+import com.invoiceapp.global.jpa.DocumentDomainConverter;
 import com.invoiceapp.series.Series;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
@@ -55,8 +56,8 @@ public class Findoc {
             foreignKey = @ForeignKey(name = "fk_findoc_series"))
     private Series series;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "document_domain", nullable = false, length = 20)
+    @Convert(converter = DocumentDomainConverter.class)
+    @Column(name = "domain", nullable = false, length = 20)
     private DocumentDomain documentDomain;
 
     @Column(name = "fiscal_year")

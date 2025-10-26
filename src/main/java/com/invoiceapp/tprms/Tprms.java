@@ -4,6 +4,10 @@ package com.invoiceapp.tprms;
 import com.invoiceapp.global.Effect;
 import com.invoiceapp.global.Sign;
 import com.invoiceapp.global.DocumentDomain;
+import com.invoiceapp.global.jpa.DocumentDomainConverter;
+import com.invoiceapp.global.jpa.EffectConverter;
+import com.invoiceapp.global.jpa.MyDataPaymentMethodConverter;
+import com.invoiceapp.global.jpa.SignConverter;
 import jakarta.persistence.*;
 import java.time.Instant;
 
@@ -33,27 +37,27 @@ public class Tprms {
     private String description;
 
     /** Αγορές/Πωλήσεις/Εισπράξεις/Πληρωμές */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = DocumentDomainConverter.class)
     @Column(nullable = false, length = 20)
     private DocumentDomain domain;
 
     /** Επίδραση στη Χρέωση */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect debit;
 
     /** Επίδραση στην Πίστωση */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect credit;
 
     /** Επίδραση στον Τζίρο */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EffectConverter.class)
     @Column(nullable = false, length = 10)
     private Effect turnover;
 
     /** Πρόσημο εμφάνισης */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = SignConverter.class)
     @Column(nullable = false, length = 10)
     private Sign sign;
 

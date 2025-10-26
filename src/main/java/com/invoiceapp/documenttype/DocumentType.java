@@ -2,6 +2,8 @@ package com.invoiceapp.documenttype;
 
 import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.company.Company;
+import com.invoiceapp.global.jpa.DocumentDomainConverter;
+import com.invoiceapp.global.jpa.EffectConverter;
 import com.invoiceapp.iteprms.ItePrms;
 import com.invoiceapp.tprms.Tprms;
 import jakarta.persistence.*;
@@ -41,7 +43,7 @@ public class DocumentType {
     private String description;
 
     /** Αγορές/Πωλήσεις/Εισπράξεις/Πληρωμές */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = DocumentDomainConverter.class)
     @Column(name = "domain", nullable = false, length = 20)
     private DocumentDomain domain;
 
