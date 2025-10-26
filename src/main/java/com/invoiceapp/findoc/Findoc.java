@@ -6,6 +6,8 @@ import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.DocumentStatus;
 import com.invoiceapp.global.jpa.DocumentDomainConverter;
+import com.invoiceapp.global.jpa.DocumentStatusConverter;
+import com.invoiceapp.global.jpa.MyDataPaymentMethodConverter;
 import com.invoiceapp.series.Series;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
@@ -77,7 +79,7 @@ public class Findoc {
             foreignKey = @ForeignKey(name = "fk_findoc_customer"))
     private Customer customer;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = DocumentStatusConverter.class)
     @Column(name = "status", nullable = false, length = 16)
     private DocumentStatus status = DocumentStatus.DRAFT;
 

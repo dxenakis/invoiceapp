@@ -280,7 +280,7 @@ public class FindocServiceImpl implements FindocService {
                 e.getPrintedNumber(),
                 e.getDocumentDate(),
                 e.getCustomer() != null ? e.getCustomer().getId() : null,
-                e.getStatus(),
+                e.getStatus().getCode(),
                 e.getTotalNet(),
                 e.getTotalVat(),
                 e.getTotalGross(),

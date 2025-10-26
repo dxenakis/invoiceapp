@@ -28,6 +28,7 @@ public class CustomerServiceImpl implements CustomerService {
         return new CustomerResponse(
                 c.getId(),
                 c.getCompanyId(), // γεμίζει αυτόματα από @TenantId
+                c.getCode(),
                 c.getName(),
                 c.getPhone(),
                 c.getAddress(),
@@ -41,6 +42,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private static void apply(CustomerRequest req, Customer e, Country country) {
+        e.setCode(req.code());
         e.setName(req.name());
         e.setPhone(req.phone());
         e.setAddress(req.address());

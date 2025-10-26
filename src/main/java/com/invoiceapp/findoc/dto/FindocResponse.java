@@ -20,7 +20,7 @@ public record FindocResponse(
         String printedNumber,
         LocalDate documentDate,
         Long customerId,
-        com.invoiceapp.global.DocumentStatus status,
+        Integer status,
         BigDecimal totalNet,
         BigDecimal totalVat,
         BigDecimal totalGross,

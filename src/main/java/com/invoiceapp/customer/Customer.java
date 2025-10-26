@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "customers",
+        uniqueConstraints = @UniqueConstraint(name = "uk_Customer_Company_code", columnNames = {"company_id","code"}),
         indexes = {
                 @Index(name = "idx_customers_company", columnList = "company_id")
         }
@@ -30,6 +31,9 @@ public class Customer {
     @JoinColumn(name = "company_id", insertable = false, updatable = false,
             foreignKey = @ForeignKey(name = "fk_customers_company"))
     private Company company;
+
+    @Column(name = "code", nullable = false, length = 200)
+    private String code;
 
     @Column(name = "name", nullable = false, length = 200)
     private String name;
@@ -84,6 +88,15 @@ public class Customer {
     }
 
     // --- Getters / Setters ---
+
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
