@@ -1,146 +1,193 @@
 package com.invoiceapp.auth;
 
 import com.invoiceapp.access.UserCompanyAccess;
-import com.invoiceapp.access.UserCompanyAccessService;
 import com.invoiceapp.auth.dto.*;
-import com.invoiceapp.exception.UserAlreadyExistsException;
+import com.invoiceapp.company.CompanyRepository;
 import com.invoiceapp.securityconfig.JwtTokenProvider;
-import com.invoiceapp.user.Role;
 import com.invoiceapp.user.User;
 import com.invoiceapp.user.UserRepository;
 import com.invoiceapp.user.UserStatus;
-import com.invoiceapp.company.*;
+import com.invoiceapp.access.UserCompanyAccessService;
+import com.invoiceapp.user.Role;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AuthService {
 
-    private final UserRepository users;
-    private final PasswordEncoder encoder;
     private final AuthenticationManager authManager;
-    private final JwtTokenProvider jwt;
-    private final UserCompanyAccessService access;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepo;
     private final CompanyRepository companyRepo;
+    private final UserCompanyAccessService accessService;
+    private final JwtTokenProvider jwt;
 
-    public AuthService(UserRepository users,
-                       PasswordEncoder encoder,
-                       AuthenticationManager authManager,
-                       JwtTokenProvider jwt,
-                       UserCompanyAccessService access,
-                       CompanyRepository companyRepo) {
-        this.users = users;
-        this.encoder = encoder;
+    public AuthService(AuthenticationManager authManager,
+                       PasswordEncoder passwordEncoder,
+                       UserRepository userRepo,
+                       CompanyRepository companyRepo,
+                       UserCompanyAccessService accessService,
+                       JwtTokenProvider jwt) {
         this.authManager = authManager;
-        this.jwt = jwt;
-        this.access = access;
+        this.passwordEncoder = passwordEncoder;
+        this.userRepo = userRepo;
         this.companyRepo = companyRepo;
+        this.accessService = accessService;
+        this.jwt = jwt;
     }
 
-    // 🔑 LOGIN
-    @Transactional(readOnly = true)
-    public LoginResponse login(LoginRequest req) {
-        authManager.authenticate(new UsernamePasswordAuthenticationToken(req.username(), req.password()));
+    /* ===== LOGIN: εκδίδει PRE-TENANT access (χωρίς act_cid & χωρίς role) + refresh cookie ===== */
+    @Transactional
+    public LoginResponse login(LoginRequest req, HttpServletResponse res) {
+        try {
+            authManager.authenticate(new UsernamePasswordAuthenticationToken(req.username(), req.password()));
+        } catch (Exception e) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
 
-        User user = users.findByUsername(req.username())
-                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+        User user = userRepo.findByUsername(req.username())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
-        List<UserCompanyAccess> companies = access.getUserCompanies(user.getId());
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new BadCredentialsException("Inactive user");
+        }
+        List<UserCompanyAccess> companies = accessService.getUserCompanies(user.getId());
 
-        // Αν έχει ακριβώς μία εταιρεία, βγάλε token με ενεργό context (ευκολία UX)
-        if (companies.size() == 1) {
-            UserCompanyAccess uca = companies.get(0);
-            String token = jwt.generateToken(user.getUsername(), uca.getRole(), uca.getCompanyId());
-            return new LoginResponse(
-                    token,
-                    uca.getCompanyId(),
-                    companies.stream()
+        List<LoginResponse.CompanyAccessItem>  userCompanies =  companies.stream()
                             .map(c -> new LoginResponse.CompanyAccessItem(c.getCompanyId(), c.getRole(), null))
-                            .toList()
-            );
-        }
+                            .toList();
 
-        // Διαφορετικά, token χωρίς active company — το UI θα κάνει switch
-        String token = jwt.generateToken(user.getUsername());
-        return new LoginResponse(
-                token,
-                null,
-                companies.stream()
-                        .map(c -> new LoginResponse.CompanyAccessItem(c.getCompanyId(), c.getRole(), null))
-                        .toList()
-        );
+
+        // PRE-TENANT access: actCid = null, role = null (δεν γράφεται claim)
+        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null);
+        String refreshToken = jwt.generateRefreshToken(user.getUsername(), user.getRefreshVersion());
+
+        CookieUtils.setRefreshCookie(res, refreshToken);
+        return new LoginResponse(accessToken,null,userCompanies);
     }
 
-    // 🧾 REGISTER (manual) — ΜΟΝΟ User
+    /* ===== REGISTER (manual): δημιουργεί χρήστη + auto-login (pre-tenant) ===== */
     @Transactional
-    public AuthResponse registerManual(RegisterManualRequest req) {
-        if (users.existsByUsername(req.username()))
-            throw new UserAlreadyExistsException("Username already exists");
-        if (users.existsByEmail(req.email()))
-            throw new UserAlreadyExistsException("Email already exists");
+    public AuthResponse registerManual(RegisterManualRequest req, HttpServletResponse res) {
+        userRepo.findByUsername(req.username()).ifPresent(u -> {
+            throw new IllegalArgumentException("Username already exists");
+        });
 
-        User u = new User();
-        u.setUsername(req.username().trim());
-        u.setPassword(encoder.encode(req.password()));
-        u.setEmail(req.email().trim());
-        u.setStatus(UserStatus.ACTIVE);
-        users.save(u);
+        User user = new User();
+        user.setUsername(req.username());
+        user.setPassword(passwordEncoder.encode(req.password()));
+        user.setEmail(req.email());
+        user.setStatus(UserStatus.ACTIVE);
+        user.setRefreshVersion(1);
+        userRepo.save(user);
 
-        // Token ΧΩΡΙΣ active company
-        String token = jwt.generateToken(u.getUsername());
-        return new AuthResponse(token);
+        // Auto-login (pre-tenant)
+        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null);
+        String refreshToken = jwt.generateRefreshToken(user.getUsername(), user.getRefreshVersion());
+        CookieUtils.setRefreshCookie(res, refreshToken);
+
+        return new AuthResponse(accessToken);
     }
 
-    // 🧾 REGISTER (gov) — επίσης ΜΟΝΟ User
+    /* ===== REGISTER (gov): όπως και το manual, χωρίς role στο User ===== */
     @Transactional
-    public AuthResponse registerWithGov(RegisterGovRequest req) {
-        if (users.existsByUsername(req.username()))
-            throw new UserAlreadyExistsException("Username already exists");
-        if (users.existsByEmail(req.email()))
-            throw new UserAlreadyExistsException("Email already exists");
+    public AuthResponse registerWithGov(RegisterGovRequest req, HttpServletResponse res) {
+        userRepo.findByUsername(req.username()).ifPresent(u -> {
+            throw new IllegalArgumentException("Username already exists");
+        });
 
-        // Εδώ θα έμπαινε ο gov έλεγχος/flow — προς το παρόν δημιουργούμε χρήστη
-        User u = new User();
-        u.setUsername(req.username().trim());
-        u.setPassword(encoder.encode(req.password()));
-        u.setEmail(req.email().trim());
-        u.setStatus(UserStatus.ACTIVE);
-        users.save(u);
+        // TODO: εδώ μπαίνει η πραγματική gov ταυτοποίηση
+        User user = new User();
+        user.setUsername(req.username());
+        user.setPassword(passwordEncoder.encode(req.password()));
+        user.setStatus(UserStatus.ACTIVE);
+        user.setRefreshVersion(1);
+        userRepo.save(user);
 
-        String token = jwt.generateToken(u.getUsername());
-        return new AuthResponse(token);
+        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null); // pre-tenant
+        String refreshToken = jwt.generateRefreshToken(user.getUsername(), user.getRefreshVersion());
+        CookieUtils.setRefreshCookie(res, refreshToken);
+
+        return new AuthResponse(accessToken);
     }
 
-    // 🔁 Switch Company
+    /* ===== SWITCH COMPANY: εκδίδει TENANT access (με act_cid & role από UserCompanyAccess) ===== */
     @Transactional(readOnly = true)
-    public String switchCompany(String username, Long companyId) {
-        // 1) Βασικός έλεγχος input
-        if (companyId == null || companyId <= 0) {
-            throw new IllegalArgumentException("Invalid companyId");
-        }
+    public AuthResponse switchCompany(String username, Long companyId) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException("User not found"));
 
-        // 2) Βρες χρήστη (404/401 ανά exception mapping σου)
-        User user = users.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-
-        // 3) Επιβεβαίωσε ότι η εταιρεία υπάρχει (GLOBAL entity, χωρίς @TenantId)
-        if (!companyRepo.existsById(companyId)) {
+        if (companyId != null && !companyRepo.existsById(companyId)) {
             throw new IllegalArgumentException("Company not found: " + companyId);
         }
+        if (companyId != null) {
+            // validate access & πάρ’ το role από το mapping
+            Role roleForCompany = accessService.roleFor(user.getId(), companyId)
+                    .orElseThrow(() -> new AccessDeniedException("No access to company " + companyId));
 
-        // 4) Έλεγχος πρόσβασης του χρήστη στην εταιρεία (GLOBAL πίνακας UserCompanyAccess)
-        Role role = access.roleFor(user.getId(), companyId)
-                .orElseThrow(() -> new AccessDeniedException("User has no access to company " + companyId));
+            String accessToken = jwt.generateAccessToken(user.getUsername(), roleForCompany, companyId);
+            return new AuthResponse(accessToken);
+        }
 
-        // 5) Έκδοση ΝΕΟΥ token με πραγματικό companyId (ποτέ -1/0)
-        return jwt.generateToken(user.getUsername(), role, companyId);
+        // Αν για κάποιο λόγο ζητηθεί "null" company, επιστρέφουμε pre-tenant access
+        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null);
+        return new AuthResponse(accessToken);
+    }
+
+    /* ===== REFRESH: ελέγχει refresh cookie (ver) και εκδίδει νέο access =====
+       - Αν actCid != null: role από UserCompanyAccess & act_cid στο token
+       - Αν actCid == null: pre-tenant access (χωρίς role/act_cid claims)
+    */
+    @Transactional(readOnly = true)
+    public RefreshResponse refresh(String refreshCookie, RefreshRequest body) {
+        if (refreshCookie == null || refreshCookie.isBlank()) {
+            throw new BadCredentialsException("Missing refresh cookie");
+        }
+        if (!jwt.validateRefresh(refreshCookie)) {
+            throw new BadCredentialsException("Invalid refresh");
+        }
+
+        String username = jwt.getUsername(refreshCookie)
+                .orElseThrow(() -> new BadCredentialsException("Invalid refresh"));
+        int ver = jwt.getRefreshVersion(refreshCookie)
+                .orElseThrow(() -> new BadCredentialsException("Invalid refresh"));
+
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException("User not found"));
+
+        if (!Integer.valueOf(ver).equals(user.getRefreshVersion())) {
+            throw new BadCredentialsException("Refresh revoked");
+        }
+
+        Long actCid = Optional.ofNullable(body).map(RefreshRequest::actCid).orElse(null);
+        if (actCid != null) {
+            Role roleForCompany = accessService.roleFor(user.getId(), actCid)
+                    .orElseThrow(() -> new AccessDeniedException("No access to company " + actCid));
+            String newAccess = jwt.generateAccessToken(user.getUsername(), roleForCompany, actCid);
+            return new RefreshResponse(newAccess);
+        } else {
+            // pre-tenant access
+            String newAccess = jwt.generateAccessToken(user.getUsername(), null, null);
+            return new RefreshResponse(newAccess);
+        }
+    }
+
+    /* ===== LOGOUT: revoke-all refresh (version++) + clear cookie ===== */
+    @Transactional
+    public void logout(String username, HttpServletResponse res) {
+        userRepo.findByUsername(username).ifPresent(u -> {
+            u.incrementRefreshVersion();
+            userRepo.save(u);
+        });
+        CookieUtils.clearRefreshCookie(res);
     }
 }

@@ -31,16 +31,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
 
-            if (jwt.validate(token)) {
+            if (jwt.validate(token)) { // ACCESS
                 String username = jwt.getUsername(token).orElse(null);
                 var roleOpt = jwt.getRole(token);
-                var companyIdOpt = jwt.getActiveCompanyId(token);
+                var companyIdOpt = jwt.getActiveCompanyId(token); // μπορεί να λείπει (pre-tenant)
 
                 if (username != null) {
                     var authorities = roleOpt
                             .map(r -> List.of(new SimpleGrantedAuthority("ROLE_" + r.name())))
-                            .orElse(List.of(new SimpleGrantedAuthority("ROLE_USER"))); // default
-
+                            .orElse(List.of(new SimpleGrantedAuthority("ROLE_USER")));
                     var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
                     auth.setDetails(new ActiveCompanyDetails(req, companyIdOpt.orElse(null)));
                     SecurityContextHolder.getContext().setAuthentication(auth);
@@ -51,17 +50,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    /** Κουβαλάμε το act_cid μέσα στο SecurityContext */
     public static class ActiveCompanyDetails extends WebAuthenticationDetails {
         private final Long companyId;
-
         public ActiveCompanyDetails(HttpServletRequest request, Long companyId) {
             super(request);
             this.companyId = companyId;
         }
-
-        public Long getCompanyId() {
-            return companyId;
-        }
+        public Long getCompanyId() { return companyId; }
     }
 }

@@ -1,6 +1,7 @@
 package com.invoiceapp.auth;
 
 import com.invoiceapp.auth.dto.*;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,30 +19,43 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
-        return ResponseEntity.ok(auth.login(req));
-    }
-
-    @PostMapping("/switch-company")
-    public ResponseEntity<AuthResponse> switchCompany(@Valid @RequestBody SwitchCompanyRequest req,
-                                                      Principal principal) {
-        // basic guard για null/μη έγκυρο id -> 400
-        if (req.companyId() == null || req.companyId() <= 0) {
-            throw new IllegalArgumentException("Invalid companyId");
-        }
-
-        String username = principal.getName();
-        String newToken = auth.switchCompany(username, req.companyId());
-        return ResponseEntity.ok(new AuthResponse(newToken));
-    }
-
-    @PostMapping("/register/gov")
-    public ResponseEntity<AuthResponse> registerWithGov(@Valid @RequestBody RegisterGovRequest req) {
-        return ResponseEntity.ok(auth.registerWithGov(req));
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req, HttpServletResponse res) {
+        return ResponseEntity.ok(auth.login(req, res));
     }
 
     @PostMapping("/register/manual")
-    public ResponseEntity<AuthResponse> registerManual(@Valid @RequestBody RegisterManualRequest req) {
-        return ResponseEntity.ok(auth.registerManual(req));
+    public ResponseEntity<AuthResponse> registerManual(@Valid @RequestBody RegisterManualRequest req,
+                                                       HttpServletResponse res) {
+        return ResponseEntity.ok(auth.registerManual(req, res));
+    }
+
+    @PostMapping("/register/gov")
+    public ResponseEntity<AuthResponse> registerGov(@Valid @RequestBody RegisterGovRequest req,
+                                                    HttpServletResponse res) {
+        return ResponseEntity.ok(auth.registerWithGov(req, res));
+    }
+
+    @PostMapping("/switch-company")
+    public ResponseEntity<AuthResponse> switchCompany(Principal principal,
+                                                      @RequestBody SwitchCompanyRequest req) {
+        String username = principal.getName();
+        return ResponseEntity.ok(auth.switchCompany(username, req.companyId()));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshResponse> refresh(
+            @CookieValue(name = "refresh", required = false) String refreshCookie,
+            @RequestBody(required = false) RefreshRequest body) {
+        return ResponseEntity.ok(auth.refresh(refreshCookie, body));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(Principal principal, HttpServletResponse res) {
+        if (principal != null) {
+            auth.logout(principal.getName(), res);
+        } else {
+            CookieUtils.clearRefreshCookie(res);
+        }
+        return ResponseEntity.noContent().build();
     }
 }
