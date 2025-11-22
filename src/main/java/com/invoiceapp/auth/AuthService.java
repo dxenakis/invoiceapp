@@ -2,6 +2,7 @@ package com.invoiceapp.auth;
 
 import com.invoiceapp.access.UserCompanyAccess;
 import com.invoiceapp.auth.dto.*;
+import com.invoiceapp.company.Company;
 import com.invoiceapp.company.CompanyRepository;
 import com.invoiceapp.securityconfig.JwtTokenProvider;
 import com.invoiceapp.user.User;
@@ -9,6 +10,7 @@ import com.invoiceapp.user.UserRepository;
 import com.invoiceapp.user.UserStatus;
 import com.invoiceapp.access.UserCompanyAccessService;
 import com.invoiceapp.user.Role;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -62,9 +64,13 @@ public class AuthService {
         }
         List<UserCompanyAccess> companies = accessService.getUserCompanies(user.getId());
 
-        List<LoginResponse.CompanyAccessItem>  userCompanies =  companies.stream()
-                            .map(c -> new LoginResponse.CompanyAccessItem(c.getCompanyId(), c.getRole(), null))
-                            .toList();
+        List<LoginResponse.CompanyAccessItem> userCompanies = companies.stream()
+                .map(c -> {
+                    Company company = companyRepo.findById(c.getCompanyId())
+                            .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+                    return new LoginResponse.CompanyAccessItem(c.getCompanyId(), c.getRole(), company.getName(),company.getAfm());
+                })
+                .toList();
 
 
         // PRE-TENANT access: actCid = null, role = null (δεν γράφεται claim)
@@ -72,12 +78,31 @@ public class AuthService {
         String refreshToken = jwt.generateRefreshToken(user.getUsername(), user.getRefreshVersion());
 
         CookieUtils.setRefreshCookie(res, refreshToken);
-        return new LoginResponse(accessToken,null,userCompanies);
+        return new LoginResponse(accessToken,null,user.getUsername(),user.getFirstname(), user.getLastname(), userCompanies);
     }
+
+    @Transactional(readOnly = true)
+    public MeResponse me(String username) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        List<UserCompanyAccess> companies = accessService.getUserCompanies(user.getId());
+
+        List<MeResponse.CompanyAccessItem> userCompanies = companies.stream()
+                .map(c -> {
+                    Company company = companyRepo.findById(c.getCompanyId())
+                            .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+                    return new MeResponse.CompanyAccessItem(c.getCompanyId(), c.getRole(), company.getName(),company.getAfm());
+                })
+                .toList();
+
+        return new MeResponse(user.getUsername(),user.getFirstname(),user.getLastname(), userCompanies);
+    }
+
 
     /* ===== REGISTER (manual): δημιουργεί χρήστη + auto-login (pre-tenant) ===== */
     @Transactional
-    public AuthResponse registerManual(RegisterManualRequest req, HttpServletResponse res) {
+    public AuthResponse register(RegisterManualRequest req, HttpServletResponse res) {
         userRepo.findByUsername(req.username()).ifPresent(u -> {
             throw new IllegalArgumentException("Username already exists");
         });
@@ -86,6 +111,8 @@ public class AuthService {
         user.setUsername(req.username());
         user.setPassword(passwordEncoder.encode(req.password()));
         user.setEmail(req.email());
+        user.setFirstname(req.firstname());
+        user.setLastname(req.lastname());
         user.setStatus(UserStatus.ACTIVE);
         user.setRefreshVersion(1);
         userRepo.save(user);

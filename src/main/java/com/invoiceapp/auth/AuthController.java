@@ -23,10 +23,16 @@ public class AuthController {
         return ResponseEntity.ok(auth.login(req, res));
     }
 
-    @PostMapping("/register/manual")
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> me(Principal principal) {
+        String username = principal.getName();  // έρχεται από το access token
+        return ResponseEntity.ok(auth.me(username));
+    }
+
+    @PostMapping("/register")
     public ResponseEntity<AuthResponse> registerManual(@Valid @RequestBody RegisterManualRequest req,
                                                        HttpServletResponse res) {
-        return ResponseEntity.ok(auth.registerManual(req, res));
+        return ResponseEntity.ok(auth.register(req, res));
     }
 
     @PostMapping("/register/gov")

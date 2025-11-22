@@ -18,6 +18,12 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(nullable = false)
+    private String firstname;
+
+    @Column(nullable = false)
+    private String lastname;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
@@ -48,5 +54,21 @@ public class User {
 
     public void incrementRefreshVersion() {
         this.refreshVersion = (this.refreshVersion == null ? 1 : this.refreshVersion + 1);
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
     }
 }

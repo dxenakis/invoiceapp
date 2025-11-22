@@ -2,6 +2,7 @@ package com.invoiceapp.securityconfig;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,6 +35,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/login", "/auth/register/**", "/auth/refresh").permitAll()
                         .requestMatchers("/lookups/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()   // 👈 εδώ
+                        .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
                         .anyRequest().authenticated()
                 );
 

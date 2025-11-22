@@ -8,7 +8,10 @@ import java.util.List;
 public record LoginResponse(
         String token,
         Long activeCompanyId,
+        String username,
+        String firstname,
+        String lastname,
         List<CompanyAccessItem> companies
 ) {
-    public record CompanyAccessItem(Long companyId, Role role, String companyName) {}
+    public record CompanyAccessItem(Long companyId, Role role, String companyName,String Vat) {}
 }

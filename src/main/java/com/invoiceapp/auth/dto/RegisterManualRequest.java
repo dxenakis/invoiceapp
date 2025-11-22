@@ -6,5 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 public record RegisterManualRequest(
         @NotBlank String username,
         @NotBlank String password,
+        @NotBlank String firstname,
+        @NotBlank String lastname,
         @Email @NotBlank String email
 ) {}
