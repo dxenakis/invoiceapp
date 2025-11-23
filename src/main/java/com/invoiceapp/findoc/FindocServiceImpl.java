@@ -1,33 +1,37 @@
 package com.invoiceapp.findoc;
 
+import com.invoiceapp.branch.Branch;
 import com.invoiceapp.branch.BranchRepository;
-import com.invoiceapp.customer.Customer;
-import com.invoiceapp.customer.CustomerRepository;
+import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.documenttype.DocumentTypeRepository;
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
 import com.invoiceapp.findoc.dto.MtrLineRequest;
 import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.DocumentStatus;
+import com.invoiceapp.global.TraderDomain;
 import com.invoiceapp.mtrl.Mtrl;
 import com.invoiceapp.mtrl.MtrlRepository;
 import com.invoiceapp.series.Series;
 import com.invoiceapp.series.SeriesRepository;
 import com.invoiceapp.seriescounter.SeriesYearCounterService;
 import com.invoiceapp.seriescounter.dto.NextNumberRequest;
-import com.invoiceapp.seriescounter.dto.NextNumberResponse;
+import com.invoiceapp.trader.Trader;
+import com.invoiceapp.trader.TraderRepository;
 import com.invoiceapp.vat.Vat;
 import com.invoiceapp.vat.VatRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -40,7 +44,7 @@ public class FindocServiceImpl implements FindocService {
     private final DocumentTypeRepository docTypeRepo;
     private final BranchRepository branchRepo;
     private final SeriesRepository seriesRepo;
-    private final CustomerRepository customerRepo;
+    private final TraderRepository traderRepo;
     private final MtrlRepository mtrlRepo;
     private final VatRepository vatRepo;
     private final SeriesYearCounterService counterSvc;
@@ -50,7 +54,7 @@ public class FindocServiceImpl implements FindocService {
                              DocumentTypeRepository docTypeRepo,
                              BranchRepository branchRepo,
                              SeriesRepository seriesRepo,
-                             CustomerRepository customerRepo,
+                             TraderRepository traderRepo,
                              MtrlRepository mtrlRepo,
                              VatRepository vatRepo,
                              SeriesYearCounterService counterSvc) {
@@ -59,234 +63,338 @@ public class FindocServiceImpl implements FindocService {
         this.docTypeRepo = docTypeRepo;
         this.branchRepo = branchRepo;
         this.seriesRepo = seriesRepo;
-        this.customerRepo = customerRepo;
+        this.traderRepo = traderRepo;
         this.mtrlRepo = mtrlRepo;
         this.vatRepo = vatRepo;
         this.counterSvc = counterSvc;
     }
 
+    // │────────────────────────────────────────│
+    // │  Βοηθητικές μέθοδοι φόρτωσης entities   │
+    // │────────────────────────────────────────│
+
+    private Findoc getFindocOr404(Long id) {
+        return findocRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Findoc not found: " + id));
+    }
+
+    private DocumentType getDocumentType(Long id) {
+        return docTypeRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "DocumentType not found: " + id));
+    }
+
+    private Branch getBranch(Long id) {
+        return branchRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Branch not found: " + id));
+    }
+
+    private Series getSeries(Long id) {
+        return seriesRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Series not found: " + id));
+    }
+
+    private Trader getTrader(Long id) {
+        return traderRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trader not found: " + id));
+    }
+
+    private Mtrl getMtrl(Long id) {
+        return mtrlRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mtrl not found: " + id));
+    }
+
+    private Vat getVat(Long id) {
+        return vatRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vat not found: " + id));
+    }
+
+    // │────────────────────────────────────────│
+    // │   TraderDomain vs DocumentDomain       │
+    // │────────────────────────────────────────│
+
+    private void validateTraderForDocument(DocumentDomain docDomain, Trader trader) {
+        TraderDomain role = trader.getTraderDomain();
+
+        boolean ok = switch (docDomain) {
+            case SALES, COLLECTIONS -> role == TraderDomain.CUSTOMER;
+            case PURCHASES, PAYMENTS -> role == TraderDomain.SUPPLIER;
+        };
+
+        if (!ok) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Trader " + trader.getId() +
+                            " (" + trader.getTraderDomain() + ")" +
+                            " δεν επιτρέπεται για έγγραφο domain=" + docDomain
+            );
+        }
+    }
+
+    // │────────────────────────────────────────│
+    // │              createDraft               │
+    // │────────────────────────────────────────│
+
     @Override
     public FindocResponse createDraft(FindocCreateRequest req) {
-        if (req.documentTypeId() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "documentTypeId is required");
-        if (req.customerId() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "customerId is required");
-        if (req.documentDomain() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "documentDomain is required");
-        LocalDate docDate = (req.documentDate() != null) ? req.documentDate() : LocalDate.now();
 
-        var dt = docTypeRepo.findById(req.documentTypeId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "DocumentType not found: " + req.documentTypeId()));
+        if (req.documentTypeId() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "documentTypeId required");
+        if (req.branchId() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "branchId required");
+        if (req.seriesId() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "seriesId required");
+        if (req.traderId() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "traderId required");
+        if (req.documentDate() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "documentDate required");
+        if (req.documentDomain() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "documentDomain required");
 
-        Series series = null;
-        if (req.seriesId() != null) {
-            series = seriesRepo.findById(req.seriesId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Series not found: " + req.seriesId()));
-        }
+        DocumentDomain domain = DocumentDomain.fromCode(req.documentDomain());
+        DocumentType dt = getDocumentType(req.documentTypeId());
+        Branch br = getBranch(req.branchId());
+        Series sr = getSeries(req.seriesId());
+        Trader trader = getTrader(req.traderId());
 
-        var branch = (req.branchId() != null) ? branchRepo.findById(req.branchId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Branch not found: " + req.branchId()))
-                : null;
+        validateTraderForDocument(domain, trader);
 
-        Customer customer = customerRepo.findById(req.customerId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer not found: " + req.customerId()));
+        LocalDate docDate = req.documentDate();
+        int fiscalYear = docDate.getYear();
 
         Findoc f = new Findoc();
         f.setDocumentType(dt);
-        f.setSeries(series);
-        f.setBranch(branch);
-        f.setCustomer(customer);
+        f.setBranch(br);
+        f.setSeries(sr);
+        f.setTrader(trader);
+        f.setDocumentDomain(domain);
         f.setDocumentDate(docDate);
-        f.setDocumentDomain(DocumentDomain.fromCode(req.documentDomain()));
+        f.setFiscalYear(fiscalYear);
         f.setStatus(DocumentStatus.DRAFT);
-        return toDto(findocRepo.save(f));
+        f.setTotalNet(BigDecimal.ZERO);
+        f.setTotalVat(BigDecimal.ZERO);
+        f.setTotalGross(BigDecimal.ZERO);
+
+        return toResponse(findocRepo.save(f));
     }
 
+    // │────────────────────────────────────────│
+    // │               upsertLine               │
+    // │────────────────────────────────────────│
+
     @Override
-    public FindocResponse upsertLine(Long findocId, MtrLineRequest lineReq) {
-        Findoc f = mustBeEditable(findocId);
+    public FindocResponse upsertLine(Long findocId, MtrLineRequest req) {
 
-        Mtrl mtrl = mtrlRepo.findById(lineReq.mtrlId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mtrl not found: " + lineReq.mtrlId()));
-        Vat vat = vatRepo.findById(lineReq.vatId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vat not found: " + lineReq.vatId()));
+        Findoc f = getFindocOr404(findocId);
 
-        Mtrlines line = f.getLines().stream()
-                .filter(l -> l.getLineNo().equals(lineReq.lineNo()))
+        if (f.getStatus() != DocumentStatus.DRAFT)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only draft documents editable");
+
+        Mtrl m = getMtrl(req.mtrlId());
+        Vat v = getVat(req.vatId());
+
+        BigDecimal qty = nz(req.qty());
+        BigDecimal price = nz(req.price());
+        BigDecimal dr = nz(req.discountRate());
+
+        BigDecimal lineGross = qty.multiply(price);
+        BigDecimal discount = lineGross.multiply(dr).divide(new BigDecimal("100"));
+        BigDecimal net = lineGross.subtract(discount);
+        BigDecimal vatAmount = net.multiply(v.getRate()).divide(new BigDecimal("100"));
+        BigDecimal total = net.add(vatAmount);
+
+        // find or create line
+        List<Mtrlines> lines = lineRepo.findByFindocIdOrderByLineNoAsc(findocId);
+
+        Mtrlines line = lines.stream()
+                .filter(l -> l.getLineNo().equals(req.lineNo()))
                 .findFirst()
                 .orElseGet(() -> {
                     Mtrlines nl = new Mtrlines();
                     nl.setFindoc(f);
-                    nl.setLineNo(lineReq.lineNo());
-                    f.addLine(nl);
                     return nl;
                 });
 
-        line.setMtrl(mtrl);
-        line.setVat(vat);
-        line.setQty(nz(lineReq.qty()));
-        line.setPrice(nz(lineReq.price()));
-        line.setDiscountRate(nz(lineReq.discountRate()));
+        line.setLineNo(req.lineNo());
+        line.setMtrl(m);
+        line.setVat(v);
+        line.setQty(qty);
+        line.setPrice(price);
+        line.setDiscountRate(dr);
+        line.setNetAmount(net);
+        line.setVatAmount(vatAmount);
+        line.setTotalAmount(total);
 
-        recalcLine(line);
+        lineRepo.save(line);
         recalcTotals(f);
 
-        return toDto(f);
+        return toResponse(findocRepo.save(f));
     }
+
+    // │────────────────────────────────────────│
+    // │               deleteLine               │
+    // │────────────────────────────────────────│
 
     @Override
     public FindocResponse deleteLine(Long findocId, Long lineId) {
-        Findoc f = mustBeEditable(findocId);
-        Mtrlines l = lineRepo.findById(lineId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Line not found: id=" + lineId));
-        if (!l.getFindoc().getId().equals(f.getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Line does not belong to this document");
-        }
-        f.getLines().removeIf(x -> x.getId().equals(lineId));
-        lineRepo.delete(l);
 
-        recalcTotals(f);
-        return toDto(f);
-    }
-
-    @Override
-    public FindocResponse post(Long findocId) {
-        Findoc f = findocRepo.findById(findocId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Findoc not found: " + findocId));
+        Findoc f = getFindocOr404(findocId);
 
         if (f.getStatus() != DocumentStatus.DRAFT)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only DRAFT documents can be posted");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only draft documents editable");
 
-        if (f.getSeries() == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Series is required to post document");
+        try {
+            lineRepo.deleteById(lineId);
+        } catch (EmptyResultDataAccessException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Line not found: " + lineId);
+        }
 
-        if (f.getLines().isEmpty())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No lines to post");
-
-        // re-calc totals
-        f.getLines().forEach(this::recalcLine);
         recalcTotals(f);
+        return toResponse(findocRepo.save(f));
+    }
 
-        // numbering
-        NextNumberResponse nn = counterSvc.nextNumber(
-                new NextNumberRequest(f.getSeries().getId(), f.getDocumentDate())
-        );
-        f.setFiscalYear(nn.fiscalYear());
-        f.setNumber(nn.number());
-        f.setPrintedNumber(nn.formatted());
+    // │────────────────────────────────────────│
+    // │       post (οριστικοποίηση)            │
+    // │────────────────────────────────────────│
 
+    @Override
+    public FindocResponse post(Long id) {
+
+        Findoc f = getFindocOr404(id);
+
+        if (f.getStatus() != DocumentStatus.DRAFT)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only draft can be posted");
+
+        List<Mtrlines> lines = lineRepo.findByFindocIdOrderByLineNoAsc(id);
+        if (lines.isEmpty())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot post empty document");
+
+        var counter = counterSvc.nextNumber(new NextNumberRequest(f.getSeries().getId() , f.getDocumentDate()  ));
+
+        f.setNumber(counter.number());
+        f.setPrintedNumber(String.valueOf(counter.number()));
+        //counter.printedNumber()
+        recalcTotals(f);
         f.setStatus(DocumentStatus.POSTED);
 
-        return toDto(f);
+        return toResponse(findocRepo.save(f));
     }
+
+    // │────────────────────────────────────────│
+    // │               cancel                   │
+    // │────────────────────────────────────────│
 
     @Override
-    public FindocResponse cancel(Long findocId) {
-        Findoc f = findocRepo.findById(findocId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Findoc not found: " + findocId));
+    public FindocResponse cancel(Long id) {
+
+        Findoc f = getFindocOr404(id);
 
         if (f.getStatus() != DocumentStatus.POSTED)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only POSTED documents can be cancelled");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only POSTED documents can be cancelled");
 
         f.setStatus(DocumentStatus.CANCELLED);
-        return toDto(f);
+
+        return toResponse(findocRepo.save(f));
     }
 
-    @Override @Transactional(readOnly = true)
+    // │────────────────────────────────────────│
+    // │                get                     │
+    // │────────────────────────────────────────│
+
+    @Override
     public FindocResponse get(Long id) {
-        return findocRepo.findById(id).map(this::toDto)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Findoc not found: " + id));
+        return toResponse(getFindocOr404(id));
     }
 
-    @Override @Transactional(readOnly = true)
+    // │────────────────────────────────────────│
+    // │                list                    │
+    // │────────────────────────────────────────│
+
+    @Override
     public Page<FindocResponse> list(Pageable pageable, DocumentStatus status) {
-        return (status == null ? findocRepo.findAll(pageable) : findocRepo.findAllByStatus(status, pageable))
-                .map(this::toDto);
+        if (status == null)
+            return findocRepo.findAll(pageable).map(this::toResponse);
+
+        return findocRepo.findAllByStatus(status, pageable)
+                .map(this::toResponse);
     }
 
-    private Findoc mustBeEditable(Long findocId) {
-        Findoc f = findocRepo.findById(findocId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Findoc not found: " + findocId));
-        if (f.getStatus() != DocumentStatus.DRAFT)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document is not editable");
-        return f;
-    }
+    // │────────────────────────────────────────│
+    // │              helpers                   │
+    // │────────────────────────────────────────│
 
-    private void recalcLine(Mtrlines l) {
-        var qty = nz(l.getQty());
-        var price = nz(l.getPrice());
-        var disc = nz(l.getDiscountRate());
-        var vatRate = l.getVat() != null ? nz(l.getVat().getRate()) : BigDecimal.ZERO;
-
-        BigDecimal gross = price.multiply(qty);
-        BigDecimal net = gross.multiply(BigDecimal.ONE.subtract(disc));
-        BigDecimal vatAmount = net.multiply(vatRate);
-        BigDecimal total = net.add(vatAmount);
-
-        l.setNetAmount(scale(net));
-        l.setVatAmount(scale(vatAmount));
-        l.setTotalAmount(scale(total));
+    private BigDecimal nz(BigDecimal b) {
+        return b == null ? BigDecimal.ZERO : b;
     }
 
     private void recalcTotals(Findoc f) {
+        List<Mtrlines> lines = lineRepo.findByFindocIdOrderByLineNoAsc(f.getId());
+
         BigDecimal net = BigDecimal.ZERO;
         BigDecimal vat = BigDecimal.ZERO;
-        BigDecimal total = BigDecimal.ZERO;
+        BigDecimal gross = BigDecimal.ZERO;
 
-        for (Mtrlines l : f.getLines()) {
-            net   = net.add(nz(l.getNetAmount()));
-            vat   = vat.add(nz(l.getVatAmount()));
-            total = total.add(nz(l.getTotalAmount()));
+        for (Mtrlines l : lines) {
+            net = net.add(nz(l.getNetAmount()));
+            vat = vat.add(nz(l.getVatAmount()));
+            gross = gross.add(nz(l.getTotalAmount()));
         }
-        f.setTotalNet(scale(net));
-        f.setTotalVat(scale(vat));
-        f.setTotalGross(scale(total));
 
-        f.getLines().sort(Comparator.comparing(Mtrlines::getLineNo));
-        for (int i = 0; i < f.getLines().size(); i++) {
-            if (f.getLines().get(i).getLineNo() == null)
-                f.getLines().get(i).setLineNo(i + 1);
-        }
+        f.setTotalNet(net);
+        f.setTotalVat(vat);
+        f.setTotalGross(gross);
     }
 
-    private static java.math.BigDecimal nz(java.math.BigDecimal x) { return x == null ? java.math.BigDecimal.ZERO : x; }
-    private static java.math.BigDecimal scale(java.math.BigDecimal x) { return x.setScale(2, java.math.RoundingMode.HALF_UP); }
+    private FindocResponse toResponse(Findoc f) {
 
-    private FindocResponse toDto(Findoc e) {
-        List<FindocResponse.FindocLineResponse> lines = e.getLines().stream()
+        List<Mtrlines> lines =
+                lineRepo.findByFindocIdOrderByLineNoAsc(f.getId());
+
+        List<FindocResponse.LineResponse> lineDtos = new ArrayList<>();
+
+        lines.stream()
                 .sorted(Comparator.comparing(Mtrlines::getLineNo))
-                .map(l -> new FindocResponse.FindocLineResponse(
-                        l.getId(),
-                        l.getLineNo(),
-                        l.getMtrl() != null ? l.getMtrl().getId() : null,
-                        l.getMtrl() != null ? safe(l.getMtrl().getCode()) : null,
-                        l.getMtrl() != null ? safe(l.getMtrl().getName()) : null,
-                        l.getVat() != null ? l.getVat().getId() : null,
-                        l.getVat() != null ? l.getVat().getRate() : null,
-                        l.getQty(),
-                        l.getPrice(),
-                        l.getDiscountRate(),
-                        l.getNetAmount(),
-                        l.getVatAmount(),
-                        l.getTotalAmount()
-                )).toList();
+                .forEach(l -> {
+
+                    Mtrl m = l.getMtrl();
+                    Vat v = l.getVat();
+
+                    lineDtos.add(new FindocResponse.LineResponse(
+                            l.getId(),
+                            l.getLineNo(),
+                            m != null ? m.getId() : null,
+                            m != null ? m.getCode() : null,
+                            m != null ? m.getName() : null,
+                            v != null ? v.getId() : null,
+                            v != null ? v.getRate() : null,
+                            l.getQty(),
+                            l.getPrice(),
+                            l.getDiscountRate(),
+                            l.getNetAmount(),
+                            l.getVatAmount(),
+                            l.getTotalAmount()
+                    ));
+                });
 
         return new FindocResponse(
-                e.getId(),
-                e.getCompanyId(),
-                e.getDocumentType() != null ? e.getDocumentType().getId() : null,
-                e.getBranch() != null ? e.getBranch().getId() : null,
-                e.getSeries() != null ? e.getSeries().getId() : null,
-                e.getDocumentDomain().getCode(),
-                e.getFiscalYear(),
-                e.getNumber(),
-                e.getPrintedNumber(),
-                e.getDocumentDate(),
-                e.getCustomer() != null ? e.getCustomer().getId() : null,
-                e.getStatus().getCode(),
-                e.getTotalNet(),
-                e.getTotalVat(),
-                e.getTotalGross(),
-                lines
+                f.getId(),
+                f.getCompanyId(),
+                f.getDocumentType() != null ? f.getDocumentType().getId() : null,
+                f.getBranch() != null ? f.getBranch().getId() : null,
+                f.getSeries() != null ? f.getSeries().getId() : null,
+                f.getDocumentDomain(),
+                f.getFiscalYear(),
+                f.getNumber(),
+                f.getPrintedNumber(),
+                f.getDocumentDate(),
+                f.getTrader() != null ? f.getTrader().getId() : null,
+                f.getStatus() != null ? f.getStatus().getCode() : null,
+                f.getTotalNet(),
+                f.getTotalVat(),
+                f.getTotalGross(),
+                f.getCreatedAt(),
+                f.getUpdatedAt(),
+                lineDtos
         );
     }
-
-    private static String safe(String s) { return (s == null || s.isBlank()) ? null : s; }
 }

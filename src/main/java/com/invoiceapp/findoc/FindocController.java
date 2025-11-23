@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/findoc")
+@RequestMapping("/api/findocs")
 @RequireTenant
 public class FindocController {
 
@@ -24,38 +24,48 @@ public class FindocController {
         this.service = service;
     }
 
+    // Δημιουργία draft
     @PostMapping
-    public ResponseEntity<FindocResponse> createDraft(@Valid @RequestBody FindocCreateRequest req) {
-        FindocResponse created = service.createDraft(req);
-        return ResponseEntity.created(URI.create("/findoc/" + created.id())).body(created);
+    public ResponseEntity<FindocResponse> createDraft(@Valid @RequestBody FindocCreateRequest request) {
+        FindocResponse created = service.createDraft(request);
+        return ResponseEntity
+                .created(URI.create("/api/findocs/" + created.id()))
+                .body(created);
     }
 
+    // Upsert γραμμής (με βάση lineNo)
     @PostMapping("/{id}/lines")
     public ResponseEntity<FindocResponse> upsertLine(@PathVariable Long id,
                                                      @Valid @RequestBody MtrLineRequest line) {
         return ResponseEntity.ok(service.upsertLine(id, line));
     }
 
-    @DeleteMapping("/{id}/lines/{lineId}")
-    public ResponseEntity<FindocResponse> deleteLine(@PathVariable Long id, @PathVariable Long lineId) {
-        return ResponseEntity.ok(service.deleteLine(id, lineId));
+    // Διαγραφή γραμμής
+    @DeleteMapping("/{findocId}/lines/{lineId}")
+    public ResponseEntity<FindocResponse> deleteLine(@PathVariable Long findocId,
+                                                     @PathVariable Long lineId) {
+        return ResponseEntity.ok(service.deleteLine(findocId, lineId));
     }
 
+    // Post (οριστικοποίηση)
     @PostMapping("/{id}/post")
     public ResponseEntity<FindocResponse> post(@PathVariable Long id) {
         return ResponseEntity.ok(service.post(id));
     }
 
+    // Cancel
     @PostMapping("/{id}/cancel")
     public ResponseEntity<FindocResponse> cancel(@PathVariable Long id) {
         return ResponseEntity.ok(service.cancel(id));
     }
 
+    // Get by id
     @GetMapping("/{id}")
     public ResponseEntity<FindocResponse> get(@PathVariable Long id) {
         return ResponseEntity.ok(service.get(id));
     }
 
+    // List με optional status filter
     @GetMapping
     public ResponseEntity<Page<FindocResponse>> list(Pageable pageable,
                                                      @RequestParam(required = false) DocumentStatus status) {

@@ -1,7 +1,7 @@
 package com.invoiceapp.findoc;
 
 import com.invoiceapp.branch.Branch;
-import com.invoiceapp.customer.Customer;
+import com.invoiceapp.trader.Trader;
 import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.DocumentStatus;
@@ -29,8 +29,8 @@ import java.util.List;
         ),
         indexes = {
                 @Index(name = "idx_findoc_company", columnList = "company_id"),
-                @Index(name = "idx_findoc_dates", columnList = "document_date,fiscal_year"),
-                @Index(name = "idx_findoc_customer", columnList = "customer_id")
+                @Index(name = "idx_findoc_dates",   columnList = "document_date,fiscal_year"),
+                @Index(name = "idx_findoc_trader",  columnList = "trader_id")
         }
 )
 public class Findoc {
@@ -75,9 +75,9 @@ public class Findoc {
     private LocalDate documentDate;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "customer_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_findoc_customer"))
-    private Customer customer;
+    @JoinColumn(name = "trader_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_findoc_trader"))
+    private Trader trader;
 
     @Convert(converter = DocumentStatusConverter.class)
     @Column(name = "status", nullable = false, length = 16)
@@ -119,7 +119,7 @@ public class Findoc {
     public Long getNumber() { return number; }
     public String getPrintedNumber() { return printedNumber; }
     public LocalDate getDocumentDate() { return documentDate; }
-    public Customer getCustomer() { return customer; }
+    public Trader  getTrader() { return trader; }
     public DocumentStatus getStatus() { return status; }
     public BigDecimal getTotalNet() { return totalNet; }
     public BigDecimal getTotalVat() { return totalVat; }
@@ -138,7 +138,7 @@ public class Findoc {
     public void setNumber(Long number) { this.number = number; }
     public void setPrintedNumber(String printedNumber) { this.printedNumber = printedNumber; }
     public void setDocumentDate(LocalDate documentDate) { this.documentDate = documentDate; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
+    public void setTrader(Trader trader) { this.trader = trader; }
     public void setStatus(DocumentStatus status) { this.status = status; }
     public void setTotalNet(BigDecimal totalNet) { this.totalNet = totalNet; }
     public void setTotalVat(BigDecimal totalVat) { this.totalVat = totalVat; }
