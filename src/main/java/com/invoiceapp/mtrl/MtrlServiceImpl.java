@@ -107,10 +107,39 @@ public class MtrlServiceImpl implements MtrlService {
 
     @Override
     public MtrlResponse update(Long id, MtrlRequest req) {
-        Mtrl existing = repo.getById(id); // already tenant-filtered
-        existing.setName(req.name());
+        Mtrl existing = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
 
-        return toDto(existing);
+        // Βασικά validations – όπως στο create
+        if (!StringUtils.hasText(req.code())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "code is required");
+        }
+        if (!StringUtils.hasText(req.name())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
+        }
+
+        // Αν αλλάζει ο κωδικός, έλεγξε uniqueness
+        if (!existing.getCode().equals(req.code()) && repo.existsByCode(req.code())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "code already exists: " + req.code());
+        }
+
+        // Αντιγραφή πεδίων από request → entity
+        existing.setCode(req.code());
+        existing.setName(req.name());
+        existing.setName1(req.name1());
+        existing.setAccountCategory(req.accountCategory());
+        existing.setPricer(req.pricer());
+        existing.setPricew(req.pricew());
+        existing.setActive(req.active());
+
+        // Timestamps – συνήθως στο update ΔΕΝ πειράζουμε createdAt
+        existing.setUpdatedAt(req.updatedAt()); // ή LocalDateTime.now() αν προτιμάς server-side
+
+        // Δεν είναι υποχρεωτικό το save λόγω @Transactional,
+        // αλλά είναι πιο καθαρό και ρητό:
+        Mtrl saved = repo.save(existing);
+
+        return toDto(saved);
     }
 
     @Override
