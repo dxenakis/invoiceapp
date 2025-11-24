@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.Comparator;
+import java.util.List;
+
 
 @Service
 @Transactional // write-by-default; read-only methods override below
@@ -19,7 +22,7 @@ public class CountryServiceImpl implements CountryService {
     }
 
     // ===== Helpers (mapping & normalization) =====
-    private static CountryResponse toDto(Country c) {
+    private static   CountryResponse toDto(Country c) {
         return new CountryResponse(
                 c.getId(),
                 c.getIsoCode(),
@@ -77,4 +80,15 @@ public class CountryServiceImpl implements CountryService {
         Country existing = getOr404(id);
         countryRepository.delete(existing);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CountryResponse> list() {
+        return countryRepository.findAll()
+                .stream()
+                .sorted(Comparator.comparing(Country::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(CountryServiceImpl::toDto)
+                .toList();
+    }
+
 }

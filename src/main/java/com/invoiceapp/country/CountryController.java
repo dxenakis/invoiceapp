@@ -7,9 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
-@RequestMapping("/countries")
+@RequestMapping("/api/countries") // ήταν "/countries"
 public class CountryController {
 
     private final CountryService countryService;
@@ -52,4 +53,11 @@ public class CountryController {
         countryService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    // LIST – για dropdown στο UI
+    @GetMapping("/list")
+    public ResponseEntity<List<CountryResponse>> list() {
+        return ResponseEntity.ok(countryService.list());
+    }
+
 }
