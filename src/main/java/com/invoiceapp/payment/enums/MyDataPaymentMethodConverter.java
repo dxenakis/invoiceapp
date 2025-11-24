@@ -1,7 +1,6 @@
 // src/main/java/com/invoiceapp/global/jpa/MyDataPaymentMethodConverter.java
-package com.invoiceapp.global.jpa;
+package com.invoiceapp.payment.enums;
 
-import com.invoiceapp.global.MyDataPaymentMethod;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

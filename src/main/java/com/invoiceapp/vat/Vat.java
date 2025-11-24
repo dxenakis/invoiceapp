@@ -1,5 +1,7 @@
 package com.invoiceapp.vat;
 
+import com.invoiceapp.vat.enums.MyDataVatCode;
+import com.invoiceapp.vat.enums.MyDataVatCodeConverter;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,6 +29,11 @@ public class Vat {
     /** Συντελεστής ΦΠΑ σε 0..1, π.χ. 0.24 */
     @Column(name = "rate", nullable = false, precision = 9, scale = 6)
     private BigDecimal rate = BigDecimal.ZERO;
+
+    @Convert(converter = MyDataVatCodeConverter.class)
+    @Column(name = "mydata_vat_code")
+    private MyDataVatCode mydataVatCode;
+
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
@@ -56,4 +63,11 @@ public class Vat {
     public void setActive(boolean active) { this.active = active; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public MyDataVatCode getMydataVatCode() {
+        return mydataVatCode;
+    }
+
+    public void setMydataVatCode(MyDataVatCode mydataVatCode) {
+        this.mydataVatCode = mydataVatCode;
+    }
 }

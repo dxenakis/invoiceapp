@@ -1,6 +1,5 @@
 package com.invoiceapp.documenttype.dto;
 
-import com.invoiceapp.global.DocumentDomain;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

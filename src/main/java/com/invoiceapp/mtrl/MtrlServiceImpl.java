@@ -17,7 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
-
+import com.invoiceapp.mtrunit.MtrUnit;
+import com.invoiceapp.mtrunit.MtrUnitRepository;
+import com.invoiceapp.vat.Vat;
+import com.invoiceapp.vat.VatRepository;
 
 import java.util.List;
 
@@ -28,30 +31,53 @@ import java.util.List;
 public class MtrlServiceImpl implements MtrlService {
 
 
-    private final MtrlRepository repo;
+        private final MtrlRepository repo;
+        private final MtrUnitRepository mtrUnitRepo;
+        private final VatRepository vatRepo;
+
+        public MtrlServiceImpl(
+                MtrlRepository repo,
+                MtrUnitRepository mtrUnitRepo,
+                VatRepository vatRepo
+        ) {
+            this.repo = repo;
+            this.mtrUnitRepo = mtrUnitRepo;
+            this.vatRepo = vatRepo;
+        }
 
 
-    public MtrlServiceImpl(MtrlRepository repo) {
-        this.repo = repo;
-    }
 
 
-    // ---------- Mapping ----------
-    private static MtrlResponse toDto(Mtrl mtrl) {
-        return new MtrlResponse(
-                mtrl.getId(),
-                mtrl.getCompanyId(),
-                mtrl.getCode(),
-                mtrl.getName(),
-                mtrl.getName1(),
-                mtrl.getAccountCategory(),
-                mtrl.getPricer(),
-                mtrl.getPricew(),
-                mtrl.isActive(),
-                mtrl.getCreatedAt(),
-                mtrl.getUpdatedAt()
-        );
-    }
+        // ---------- Mapping ----------
+        private static MtrlResponse toDto(Mtrl mtrl) {
+            MtrUnit unit = mtrl.getMtrUnit();
+            Vat vat = mtrl.getVat();
+
+            Long mtrunitId = unit != null ? unit.getId() : null;
+            String mtrunitCode = unit != null ? unit.getCode() : null;
+
+            Long vatId = vat != null ? vat.getId() : null;
+            String vatCode = vat != null ? vat.getCode() : null;
+
+            return new MtrlResponse(
+                    mtrl.getId(),
+                    mtrl.getCompanyId(),
+                    mtrl.getCode(),
+                    mtrl.getName(),
+                    mtrl.getName1(),
+                    mtrl.getAccountCategory(),
+                    mtrl.getPricer(),
+                    mtrl.getPricew(),
+                    mtrunitId,
+                    mtrunitCode,
+                    vatId,
+                    vatCode,
+                    mtrl.isActive(),
+                    mtrl.getCreatedAt(),
+                    mtrl.getUpdatedAt()
+            );
+        }
+
     private static void apply(Mtrl mtrl, MtrlRequest req) {
         mtrl.setCode(req.code());
         mtrl.setName(req.name());
@@ -99,8 +125,28 @@ public class MtrlServiceImpl implements MtrlService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
         if (repo.existsByCode(req.code()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "code already exists: " + req.code());
+
         Mtrl mtrl = new Mtrl();
         apply(mtrl, req);
+        // mtrunit
+        if (req.mtrunitId() != null) {
+            MtrUnit unit = mtrUnitRepo.findById(req.mtrunitId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Unknown mtrunitId: " + req.mtrunitId()
+                    ));
+            mtrl.setMtrUnit(unit);
+        }
+
+        // vat
+        if (req.vatId() != null) {
+            Vat vat = vatRepo.findById(req.vatId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Unknown vatId: " + req.vatId()
+                    ));
+            mtrl.setVat(vat);
+        }
         return toDto(repo.save(mtrl));
     }
 
@@ -131,7 +177,25 @@ public class MtrlServiceImpl implements MtrlService {
         existing.setPricer(req.pricer());
         existing.setPricew(req.pricew());
         existing.setActive(req.active());
+// mtrunit
+        if (req.mtrunitId() != null) {
+            MtrUnit unit = mtrUnitRepo.findById(req.mtrunitId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Unknown mtrunitId: " + req.mtrunitId()
+                    ));
+            existing.setMtrUnit(unit);
+        }
 
+// vat
+        if (req.vatId() != null) {
+            Vat vat = vatRepo.findById(req.vatId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Unknown vatId: " + req.vatId()
+                    ));
+            existing.setVat(vat);
+        }
         // Timestamps – συνήθως στο update ΔΕΝ πειράζουμε createdAt
         existing.setUpdatedAt(req.updatedAt()); // ή LocalDateTime.now() αν προτιμάς server-side
 

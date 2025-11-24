@@ -8,5 +8,6 @@ public record VatRequest(
         @NotBlank String code,
         String description,
         @NotNull BigDecimal rate,
+        Integer mydataVatCode,
         Boolean active
 ) {}

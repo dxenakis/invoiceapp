@@ -1,6 +1,5 @@
 package com.invoiceapp.documenttype.dto;
 
-import com.invoiceapp.global.DocumentDomain;
 import java.time.LocalDateTime;
 
 public record DocumentTypeResponse(

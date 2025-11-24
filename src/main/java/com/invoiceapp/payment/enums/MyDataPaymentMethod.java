@@ -1,5 +1,5 @@
 // src/main/java/com/invoiceapp/global/MyDataPaymentMethod.java
-package com.invoiceapp.global;
+package com.invoiceapp.payment.enums;
 
 import java.util.Arrays;
 import java.util.Map;

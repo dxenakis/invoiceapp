@@ -1,12 +1,9 @@
 package com.invoiceapp.global.jpa;
 
 
-import com.invoiceapp.global.MyDataPaymentMethod;
 import com.invoiceapp.global.Sign;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-
-import javax.swing.*;
 
 @Converter(autoApply = false)
 public class SignConverter implements AttributeConverter<Sign, Integer> {

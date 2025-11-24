@@ -1,6 +1,6 @@
 package com.invoiceapp.tprms;
 
-import com.invoiceapp.global.DocumentDomain;
+import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.global.Effect;
 import com.invoiceapp.global.Sign;
 import com.invoiceapp.tprms.dto.TprmsCreateRequest;

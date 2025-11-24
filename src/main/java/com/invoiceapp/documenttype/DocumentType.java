@@ -1,9 +1,8 @@
 package com.invoiceapp.documenttype;
 
-import com.invoiceapp.global.DocumentDomain;
+import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.company.Company;
-import com.invoiceapp.global.jpa.DocumentDomainConverter;
-import com.invoiceapp.global.jpa.EffectConverter;
+import com.invoiceapp.findoc.enums.DocumentDomainConverter;
 import com.invoiceapp.iteprms.ItePrms;
 import com.invoiceapp.tprms.Tprms;
 import jakarta.persistence.*;

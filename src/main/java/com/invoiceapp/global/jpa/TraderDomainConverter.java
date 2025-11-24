@@ -1,6 +1,5 @@
 package com.invoiceapp.global.jpa;
 
-import com.invoiceapp.global.DocumentDomain;
 import com.invoiceapp.global.TraderDomain;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

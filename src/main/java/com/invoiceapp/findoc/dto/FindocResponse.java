@@ -1,6 +1,6 @@
 package com.invoiceapp.findoc.dto;
 
-import com.invoiceapp.global.DocumentDomain;
+import com.invoiceapp.findoc.enums.DocumentDomain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

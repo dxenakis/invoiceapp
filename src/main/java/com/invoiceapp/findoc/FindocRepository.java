@@ -1,6 +1,6 @@
 package com.invoiceapp.findoc;
 
-import com.invoiceapp.global.DocumentStatus;
+import com.invoiceapp.findoc.enums.DocumentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

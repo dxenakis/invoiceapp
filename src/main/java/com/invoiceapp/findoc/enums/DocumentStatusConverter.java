@@ -1,7 +1,5 @@
-package com.invoiceapp.global.jpa;
+package com.invoiceapp.findoc.enums;
 
-import com.invoiceapp.global.DocumentStatus;
-import com.invoiceapp.global.Effect;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

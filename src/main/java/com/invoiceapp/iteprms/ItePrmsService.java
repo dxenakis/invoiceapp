@@ -1,11 +1,8 @@
 package com.invoiceapp.iteprms;
 
-import com.invoiceapp.global.DocumentDomain;
+import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.iteprms.dto.ItePrmsCreateRequest;
 import com.invoiceapp.iteprms.dto.ItePrmsUpdateRequest;
-import com.invoiceapp.tprms.Tprms;
-import com.invoiceapp.tprms.dto.TprmsCreateRequest;
-import com.invoiceapp.tprms.dto.TprmsUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

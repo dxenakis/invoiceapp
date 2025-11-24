@@ -3,7 +3,7 @@ package com.invoiceapp.findoc;
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
 import com.invoiceapp.findoc.dto.MtrLineRequest;
-import com.invoiceapp.global.DocumentStatus;
+import com.invoiceapp.findoc.enums.DocumentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

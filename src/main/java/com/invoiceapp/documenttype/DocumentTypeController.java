@@ -3,7 +3,7 @@ package com.invoiceapp.documenttype;
 import com.invoiceapp.companyscope.RequireTenant;
 import com.invoiceapp.documenttype.dto.DocumentTypeRequest;
 import com.invoiceapp.documenttype.dto.DocumentTypeResponse;
-import com.invoiceapp.global.DocumentDomain;
+import com.invoiceapp.findoc.enums.DocumentDomain;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

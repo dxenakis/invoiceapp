@@ -2,7 +2,6 @@ package com.invoiceapp.mtrl.dto;
 
 import com.invoiceapp.mtrl.AccountingCategory;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 public record MtrlResponse(
@@ -14,7 +13,12 @@ public record MtrlResponse(
         AccountingCategory accountCategory,
         float pricer,
         float pricew,
+        Long mtrunitId,
+        String mtrunitCode,
+        Long vatId,
+        String vatCode,
         Boolean active,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt) {
+        LocalDateTime updatedAt
+) {
 }

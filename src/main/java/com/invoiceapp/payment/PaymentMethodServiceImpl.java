@@ -1,7 +1,7 @@
 package com.invoiceapp.payment;
 
 import com.invoiceapp.companyscope.RequireTenant;
-import com.invoiceapp.global.MyDataPaymentMethod;
+import com.invoiceapp.payment.enums.MyDataPaymentMethod;
 import com.invoiceapp.payment.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

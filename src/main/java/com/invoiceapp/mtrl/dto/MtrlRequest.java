@@ -13,6 +13,8 @@ public record MtrlRequest(
         AccountingCategory accountCategory,
         float pricer,
         float pricew,
+        Long mtrunitId,
+        Long vatId,
         Boolean active,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

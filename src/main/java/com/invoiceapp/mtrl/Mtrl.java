@@ -6,7 +6,8 @@ import org.hibernate.annotations.TenantId;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-
+import com.invoiceapp.mtrunit.MtrUnit;
+import com.invoiceapp.vat.Vat;
 @Entity
 @Table(
         name = "mtrl",
@@ -33,6 +34,15 @@ public class Mtrl {
     private String name1;
     @Column(name = "accountCategory", nullable = false, length = 200)
     private AccountingCategory accountCategory;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mtrunit_id")
+    private MtrUnit mtrUnit;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vat_id")
+    private Vat vat;
+
     @Column(name = "pricer")
     private float pricer;
     @Column(name = "pricew")
@@ -131,4 +141,20 @@ public class Mtrl {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+    public MtrUnit getMtrUnit() {
+        return mtrUnit;
+    }
+
+    public void setMtrUnit(MtrUnit mtrUnit) {
+        this.mtrUnit = mtrUnit;
+    }
+
+    public Vat getVat() {
+        return vat;
+    }
+
+    public void setVat(Vat vat) {
+        this.vat = vat;
+    }
+
 }

@@ -1,8 +1,8 @@
 // src/main/java/com/invoiceapp/payment/PaymentMethod.java
 package com.invoiceapp.payment;
 
-import com.invoiceapp.global.MyDataPaymentMethod;
-import com.invoiceapp.global.jpa.MyDataPaymentMethodConverter;
+import com.invoiceapp.payment.enums.MyDataPaymentMethod;
+import com.invoiceapp.payment.enums.MyDataPaymentMethodConverter;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.TenantId;
