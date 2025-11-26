@@ -3,7 +3,8 @@ name: Build & Deploy Backend
 on:
   push:
     branches:
-      - main   # Αν το βασικό σου branch δεν είναι main, βάλε εδώ το σωστό όνομα
+      - master
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
