@@ -1,10 +1,12 @@
-package com.invoiceapp.findoc;
+package com.invoiceapp.findoc.mtrlines;
 
+import com.invoiceapp.findoc.Findoc;
 import com.invoiceapp.mtrl.Mtrl;
 import com.invoiceapp.vat.Vat;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
-
+import com.invoiceapp.mtrunit.MtrUnit;
+import com.invoiceapp.whouse.Whouse;
 import java.math.BigDecimal;
 
 @Entity
@@ -37,6 +39,17 @@ public class Mtrlines {
     @JoinColumn(name = "vat", nullable = false,
             foreignKey = @ForeignKey(name = "fk_mtrlines_vat"))
     private Vat vat;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mtrunit_id",
+            foreignKey = @ForeignKey(name = "fk_mtrlines_mtrunit"))
+    private MtrUnit mtrUnit;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "whouse_id",
+            foreignKey = @ForeignKey(name = "fk_mtrlines_whouse"))
+    private Whouse whouse;
+
 
     @Column(name = "lineNo", nullable = false)
     private Integer lineNo;
@@ -71,6 +84,8 @@ public class Mtrlines {
     public BigDecimal getNetAmount() { return netAmount; }
     public BigDecimal getVatAmount() { return vatAmount; }
     public BigDecimal getTotalAmount() { return totalAmount; }
+    public MtrUnit getMtrUnit() { return mtrUnit; }
+    public Whouse getWhouse() { return whouse; }
 
     public void setId(Long id) { this.id = id; }
     public void setCompanyId(Long companyId) { this.companyId = companyId; }
@@ -84,4 +99,7 @@ public class Mtrlines {
     public void setNetAmount(BigDecimal netAmount) { this.netAmount = netAmount; }
     public void setVatAmount(BigDecimal vatAmount) { this.vatAmount = vatAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public void setMtrUnit(MtrUnit mtrUnit) { this.mtrUnit = mtrUnit; }
+    public void setWhouse(Whouse whouse) { this.whouse = whouse; }
+
 }

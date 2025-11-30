@@ -6,9 +6,12 @@ import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.documenttype.DocumentTypeRepository;
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
-import com.invoiceapp.findoc.dto.MtrLineRequest;
+import com.invoiceapp.findoc.mtrlines.dto.MtrLineRequest;
 import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.findoc.enums.DocumentStatus;
+import com.invoiceapp.findoc.mtrlines.Mtrlines;
+import com.invoiceapp.findoc.mtrlines.dto.MtrLineResponse;
+import com.invoiceapp.findoc.mtrlines.MtrlinesRepository;
 import com.invoiceapp.global.TraderDomain;
 import com.invoiceapp.mtrl.Mtrl;
 import com.invoiceapp.mtrl.MtrlRepository;
@@ -27,6 +30,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.invoiceapp.payment.PaymentMethod;
+import com.invoiceapp.payment.PaymentMethodRepository;
+import com.invoiceapp.shipkind.ShipKind;
+import com.invoiceapp.shipkind.ShipKindRepository;
+import com.invoiceapp.mtrunit.MtrUnit;
+import com.invoiceapp.mtrunit.MtrUnitRepository;
+import com.invoiceapp.whouse.Whouse;
+import com.invoiceapp.whouse.WhouseRepository;
+import com.invoiceapp.findoc.mtrdoc.Mtrdoc;
+import com.invoiceapp.findoc.mtrdoc.MtrdocRepository;
+import com.invoiceapp.findoc.mtrdoc.dto.MtrdocRequest;
+import com.invoiceapp.findoc.mtrdoc.dto.MtrdocResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -47,7 +62,11 @@ public class FindocServiceImpl implements FindocService {
     private final MtrlRepository mtrlRepo;
     private final VatRepository vatRepo;
     private final SeriesYearCounterService counterSvc;
-
+    private final PaymentMethodRepository paymentRepo;
+    private final ShipKindRepository shipKindRepo;
+    private final MtrUnitRepository mtrUnitRepo;
+    private final WhouseRepository whouseRepo;
+    private final MtrdocRepository mtrdocRepo;
     public FindocServiceImpl(FindocRepository findocRepo,
                              MtrlinesRepository lineRepo,
                              DocumentTypeRepository docTypeRepo,
@@ -56,6 +75,11 @@ public class FindocServiceImpl implements FindocService {
                              TraderRepository traderRepo,
                              MtrlRepository mtrlRepo,
                              VatRepository vatRepo,
+                             PaymentMethodRepository paymentRepo,
+                             ShipKindRepository shipKindRepo,
+                             MtrUnitRepository mtrUnitRepo,
+                             WhouseRepository whouseRepo,
+                             MtrdocRepository mtrdocRepo,
                              SeriesYearCounterService counterSvc) {
         this.findocRepo = findocRepo;
         this.lineRepo = lineRepo;
@@ -65,6 +89,11 @@ public class FindocServiceImpl implements FindocService {
         this.traderRepo = traderRepo;
         this.mtrlRepo = mtrlRepo;
         this.vatRepo = vatRepo;
+        this.paymentRepo = paymentRepo;
+        this.shipKindRepo = shipKindRepo;
+        this.mtrUnitRepo = mtrUnitRepo;
+        this.whouseRepo = whouseRepo;
+        this.mtrdocRepo = mtrdocRepo;
         this.counterSvc = counterSvc;
     }
 
@@ -105,6 +134,30 @@ public class FindocServiceImpl implements FindocService {
     private Vat getVat(Long id) {
         return vatRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vat not found: " + id));
+    }
+
+    private PaymentMethod getPayment(Long id) {
+        return paymentRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "PaymentMethod not found: " + id));
+    }
+
+    private ShipKind getShipKind(Long id) {
+        return shipKindRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "ShipKind not found: " + id));
+    }
+
+    private MtrUnit getMtrUnit(Long id) {
+        return mtrUnitRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "MtrUnit not found: " + id));
+    }
+
+    private Whouse getWhouse(Long id) {
+        return whouseRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Whouse not found: " + id));
     }
 
     // │────────────────────────────────────────│
@@ -155,6 +208,15 @@ public class FindocServiceImpl implements FindocService {
         Series sr = getSeries(req.seriesId());
         Trader trader = getTrader(req.traderId());
 
+        PaymentMethod payment = null;
+        if (req.paymentMethodId() != null) {
+            payment = getPayment(req.paymentMethodId());
+        }
+
+        ShipKind shipKind = null;
+        if (req.shipKindId() != null) {
+            shipKind = getShipKind(req.shipKindId());
+        }
         validateTraderForDocument(domain, trader);
 
         LocalDate docDate = req.documentDate();
@@ -172,7 +234,8 @@ public class FindocServiceImpl implements FindocService {
         f.setTotalNet(BigDecimal.ZERO);
         f.setTotalVat(BigDecimal.ZERO);
         f.setTotalGross(BigDecimal.ZERO);
-
+        f.setPaymentMethod(payment);
+        f.setShipKind(shipKind);
         return toResponse(findocRepo.save(f));
     }
 
@@ -189,7 +252,32 @@ public class FindocServiceImpl implements FindocService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only draft documents editable");
 
         Mtrl m = getMtrl(req.mtrlId());
-        Vat v = getVat(req.vatId());
+
+        // VAT: από request ή από είδος
+        Vat v;
+        if (req.vatId() != null) {
+            v = getVat(req.vatId());
+        } else if (m.getVat() != null) {
+            v = m.getVat();
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vat is required for line");
+        }
+
+        // MtrUnit: από request ή από είδος
+        MtrUnit u = null;
+        if (req.mtrUnitId() != null) {
+            u = getMtrUnit(req.mtrUnitId());
+        } else if (m.getMtrUnit() != null) {
+            u = m.getMtrUnit();
+        }
+
+        // Whouse: από request ή από mtrdoc του παραστατικού
+        Whouse wh = null;
+        if (req.whouseId() != null) {
+            wh = getWhouse(req.whouseId());
+        } else if (f.getMtrdoc() != null && f.getMtrdoc().getWhouse() != null) {
+            wh = f.getMtrdoc().getWhouse();
+        }
 
         BigDecimal qty = nz(req.qty());
         BigDecimal price = nz(req.price());
@@ -216,6 +304,8 @@ public class FindocServiceImpl implements FindocService {
         line.setLineNo(req.lineNo());
         line.setMtrl(m);
         line.setVat(v);
+        line.setMtrUnit(u);
+        line.setWhouse(wh);
         line.setQty(qty);
         line.setPrice(price);
         line.setDiscountRate(dr);
@@ -349,7 +439,7 @@ public class FindocServiceImpl implements FindocService {
         List<Mtrlines> lines =
                 lineRepo.findByFindocIdOrderByLineNoAsc(f.getId());
 
-        List<FindocResponse.LineResponse> lineDtos = new ArrayList<>();
+        List<MtrLineResponse> lineDtos = new ArrayList<>();
 
         lines.stream()
                 .sorted(Comparator.comparing(Mtrlines::getLineNo))
@@ -358,7 +448,7 @@ public class FindocServiceImpl implements FindocService {
                     Mtrl m = l.getMtrl();
                     Vat v = l.getVat();
 
-                    lineDtos.add(new FindocResponse.LineResponse(
+                    lineDtos.add(new MtrLineResponse(
                             l.getId(),
                             l.getLineNo(),
                             m != null ? m.getId() : null,
@@ -366,6 +456,9 @@ public class FindocServiceImpl implements FindocService {
                             m != null ? m.getName() : null,
                             v != null ? v.getId() : null,
                             v != null ? v.getRate() : null,
+                            l.getMtrUnit() != null ? l.getMtrUnit().getId() : null,
+
+                            l.getWhouse() != null ? l.getWhouse().getId() : null,
                             l.getQty(),
                             l.getPrice(),
                             l.getDiscountRate(),
@@ -373,7 +466,30 @@ public class FindocServiceImpl implements FindocService {
                             l.getVatAmount(),
                             l.getTotalAmount()
                     ));
+
                 });
+
+
+        PaymentMethod pay = f.getPaymentMethod();
+        ShipKind sk = f.getShipKind();
+
+        MtrdocResponse mtrdocDto = null;
+        if (f.getMtrdoc() != null) {
+            Mtrdoc d = f.getMtrdoc();
+            mtrdocDto = new MtrdocResponse(
+                    d.getId(),
+                    f.getId(),
+                    d.getAddressLine1(),
+                    d.getAddressLine2(),
+                    d.getCity(),
+                    d.getRegion(),
+                    d.getPostalCode(),
+                    d.getCountryCode(),
+                    d.getWhouse() != null ? d.getWhouse().getId() : null,
+                    d.getWhouse() != null ? d.getWhouse().getCode() : null,
+                    d.getWhouse() != null ? d.getWhouse().getName() : null
+            );
+        }
 
         return new FindocResponse(
                 f.getId(),
@@ -393,7 +509,53 @@ public class FindocServiceImpl implements FindocService {
                 f.getTotalGross(),
                 f.getCreatedAt(),
                 f.getUpdatedAt(),
+                // payment
+                pay != null ? pay.getId() : null,
+                pay != null ? pay.getCode() : null,
+                pay != null ? pay.getDescription() : null,
+
+                // shipkind
+                sk != null ? sk.getId() : null,
+                sk != null ? sk.getCode() : null,
+                sk != null ? sk.getName() : null,
+
+                mtrdocDto,
                 lineDtos
+
         );
     }
+    @Override
+    public FindocResponse updateMtrdoc(Long findocId, MtrdocRequest req) {
+
+        Findoc f = getFindocOr404(findocId);
+
+        if (f.getStatus() != DocumentStatus.DRAFT)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only draft documents editable");
+
+        Mtrdoc d = f.getMtrdoc();
+        if (d == null) {
+            d = new Mtrdoc();
+            d.setFindoc(f);
+        }
+
+        d.setAddressLine1(req.addressLine1());
+        d.setAddressLine2(req.addressLine2());
+        d.setCity(req.city());
+        d.setRegion(req.region());
+        d.setPostalCode(req.postalCode());
+        d.setCountryCode(req.countryCode());
+
+        if (req.whouseId() != null) {
+            Whouse wh = getWhouse(req.whouseId());
+            d.setWhouse(wh);
+        } else {
+            d.setWhouse(null);
+        }
+
+        mtrdocRepo.save(d);
+        f.setMtrdoc(d);
+
+        return toResponse(findocRepo.save(f));
+    }
+
 }

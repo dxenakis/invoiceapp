@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.invoiceapp.findoc.mtrdoc.dto.MtrdocResponse;
+import com.invoiceapp.findoc.mtrlines.dto.MtrLineResponse;
 
 /**
  * Response για Findoc, μαζί με γραμμές.
@@ -22,27 +24,25 @@ public record FindocResponse(
         String printedNumber,
         LocalDate documentDate,
         Long traderId,
-        Integer status,          // κωδικός DocumentStatus (π.χ. 0=draft, 1=posted κτλ)
+        Integer status,
         BigDecimal totalNet,
         BigDecimal totalVat,
         BigDecimal totalGross,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        List<LineResponse> lines
+
+        // νέα πεδία header
+        Long paymentMethodId,
+        String paymentMethodCode,
+        String paymentMethodDescription,
+        Long shipKindId,
+        String shipKindCode,
+        String shipKindName,
+
+        // στοιχεία παράδοσης
+        MtrdocResponse mtrdoc,
+
+        List<MtrLineResponse> mtrlines
 ) {
-    public record LineResponse(
-            Long id,
-            Integer lineNo,
-            Long mtrlId,
-            String mtrlCode,
-            String mtrlName,
-            Long vatId,
-            BigDecimal vatRate,
-            BigDecimal qty,
-            BigDecimal price,
-            BigDecimal discountRate,
-            BigDecimal netAmount,
-            BigDecimal vatAmount,
-            BigDecimal totalAmount
-    ) {}
+
 }

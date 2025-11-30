@@ -3,13 +3,14 @@ package com.invoiceapp.findoc;
 import com.invoiceapp.companyscope.RequireTenant;
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
-import com.invoiceapp.findoc.dto.MtrLineRequest;
+import com.invoiceapp.findoc.mtrlines.dto.MtrLineRequest;
 import com.invoiceapp.findoc.enums.DocumentStatus;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.invoiceapp.findoc.mtrdoc.dto.MtrdocRequest;
 
 import java.net.URI;
 
@@ -71,4 +72,12 @@ public class FindocController {
                                                      @RequestParam(required = false) DocumentStatus status) {
         return ResponseEntity.ok(service.list(pageable, status));
     }
+
+    // Ενημέρωση στοιχείων παράδοσης (mtrdoc) για το παραστατικό
+    @PutMapping("/{id}/mtrdoc")
+    public ResponseEntity<FindocResponse> updateMtrdoc(@PathVariable Long id,
+                                                       @RequestBody MtrdocRequest request) {
+        return ResponseEntity.ok(service.updateMtrdoc(id, request));
+    }
+
 }

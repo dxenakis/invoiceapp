@@ -13,5 +13,7 @@ public record FindocCreateRequest(
         Long seriesId,
         Long traderId,
         LocalDate documentDate,
-        Integer documentDomain
+        Integer documentDomain,
+        Long paymentMethodId,   // νέο
+        Long shipKindId         // νέο
 ) {}

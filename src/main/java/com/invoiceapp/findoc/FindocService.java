@@ -2,10 +2,12 @@ package com.invoiceapp.findoc;
 
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
-import com.invoiceapp.findoc.dto.MtrLineRequest;
+import com.invoiceapp.findoc.mtrlines.dto.MtrLineRequest;
 import com.invoiceapp.findoc.enums.DocumentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.invoiceapp.findoc.mtrdoc.dto.MtrdocRequest;
+
 
 public interface FindocService {
 
@@ -20,6 +22,8 @@ public interface FindocService {
     FindocResponse cancel(Long findocId);
 
     FindocResponse get(Long id);
+
+    FindocResponse updateMtrdoc(Long findocId, MtrdocRequest request);
 
     Page<FindocResponse> list(Pageable pageable, DocumentStatus status);
 }

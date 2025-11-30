@@ -1,6 +1,7 @@
 package com.invoiceapp.findoc;
 
 import com.invoiceapp.branch.Branch;
+import com.invoiceapp.findoc.mtrlines.Mtrlines;
 import com.invoiceapp.trader.Trader;
 import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.findoc.enums.DocumentDomain;
@@ -10,7 +11,9 @@ import com.invoiceapp.findoc.enums.DocumentStatusConverter;
 import com.invoiceapp.series.Series;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
-
+import com.invoiceapp.findoc.mtrdoc.Mtrdoc;
+import com.invoiceapp.payment.PaymentMethod;
+import com.invoiceapp.shipkind.ShipKind;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -60,6 +63,22 @@ public class Findoc {
     @Convert(converter = DocumentDomainConverter.class)
     @Column(name = "domain", nullable = false, length = 20)
     private DocumentDomain documentDomain;
+
+    // Στοιχεία παράδοσης / mtrdoc (1–1)
+    @OneToOne(mappedBy = "findoc", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Mtrdoc mtrdoc;
+
+    // Τρόπος πληρωμής (π.χ. Μετρητά, Τράπεζα κτλ)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id",
+            foreignKey = @ForeignKey(name = "fk_findoc_payment"))
+    private PaymentMethod paymentMethod;
+
+    // Σκοπός διακίνησης (π.χ. Πώληση, Επιστροφή κτλ - ShipKind)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shipkind_id",
+            foreignKey = @ForeignKey(name = "fk_findoc_shipkind"))
+    private ShipKind shipKind;
 
     @Column(name = "fiscal_year")
     private Integer fiscalYear;
@@ -126,6 +145,9 @@ public class Findoc {
     public List<Mtrlines> getLines() { return lines; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public ShipKind getShipKind() { return shipKind; }
+    public Mtrdoc getMtrdoc() { return mtrdoc; }
 
     public void setId(Long id) { this.id = id; }
     public void setCompanyId(Long companyId) { this.companyId = companyId; }
@@ -145,4 +167,12 @@ public class Findoc {
     public void setLines(List<Mtrlines> lines) { this.lines = lines; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
+    public void setShipKind(ShipKind shipKind) { this.shipKind = shipKind; }
+    public void setMtrdoc(Mtrdoc mtrdoc) {
+        this.mtrdoc = mtrdoc;
+        if (mtrdoc != null) {
+            mtrdoc.setFindoc(this);
+        }
+    }
 }
