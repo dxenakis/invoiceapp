@@ -21,9 +21,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          RestAuthenticationEntryPoint restAuthenticationEntryPoint,
+                          CustomAccessDeniedHandler customAccessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
+        this.customAccessDeniedHandler = customAccessDeniedHandler;
     }
 
     @Bean
@@ -35,12 +41,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/login", "/auth/register/**", "/auth/refresh").permitAll()
                         .requestMatchers("/lookups/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()   // 👈 εδώ
+                        .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
                         .anyRequest().authenticated()
+                )
+                // exception handling: standardized JSON responses for unauthenticated / access denied
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
                 );
 
+        // ensure our JWT filter runs before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -59,6 +72,8 @@ public class SecurityConfig {
         cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization","Content-Type"));
         cfg.setAllowCredentials(true); // για HttpOnly cookie σε /auth/*
+        // expose το header που θα χρησιμοποιήσει ο frontend για να ανιχνεύσει expired token
+        cfg.setExposedHeaders(List.of("X-Token-Expired"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/auth/**", cfg);
         source.registerCorsConfiguration("/**", cfg);
