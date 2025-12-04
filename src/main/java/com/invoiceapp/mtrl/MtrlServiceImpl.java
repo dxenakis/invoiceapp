@@ -10,9 +10,13 @@ import com.invoiceapp.iteprms.ItePrms;
 import com.invoiceapp.mtrl.dto.MtrlRequest;
 import com.invoiceapp.mtrl.dto.MtrlResponse;
 import com.invoiceapp.tprms.Tprms;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -23,6 +27,7 @@ import com.invoiceapp.vat.Vat;
 import com.invoiceapp.vat.VatRepository;
 
 import java.util.List;
+
 
 
 @Service
@@ -45,7 +50,8 @@ public class MtrlServiceImpl implements MtrlService {
             this.vatRepo = vatRepo;
         }
 
-
+    // creating a logger
+    private static final Logger logger  = LoggerFactory.getLogger(MtrlServiceImpl.class);
 
 
         // ---------- Mapping ----------
@@ -115,16 +121,24 @@ public class MtrlServiceImpl implements MtrlService {
 
     @Override
     public MtrlResponse create(MtrlRequest req) {
-// Μην πειράζεις companyId εδώ· με @TenantId θα συμπληρωθεί από το Session.
-// Αν το entity σου ΔΕΝ έχει @TenantId, πρόσθεσέ το εκεί (π.χ. private Long companyId με @TenantId).
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        logger.info(">>> MtrlService.create: code={} auth={} authClass={}",
+                req.code(),
+                auth != null ? auth.getName() : "null",
+                auth != null ? auth.getClass().getSimpleName() : "null"
+        );
 
-        if (!StringUtils.hasText(req.code()))
+        if (!StringUtils.hasText(req.code())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "code is required");
-        if (!StringUtils.hasText(req.name()))
+        }
+        if (!StringUtils.hasText(req.name())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
-        if (repo.existsByCode(req.code()))
+        }
+        if (repo.existsByCode(req.code())) {
+            logger.info(req.code());
             throw new ResponseStatusException(HttpStatus.CONFLICT, "code already exists: " + req.code());
+        }
 
         Mtrl mtrl = new Mtrl();
         apply(mtrl, req);

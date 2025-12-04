@@ -1,5 +1,6 @@
 package com.invoiceapp.securityconfig;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -39,10 +40,13 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/auth/login", "/auth/register/**", "/auth/refresh").permitAll()
                         .requestMatchers("/lookups/**").permitAll()
+                        .requestMatchers( "/error", "/error/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 // exception handling: standardized JSON responses for unauthenticated / access denied

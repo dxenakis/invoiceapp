@@ -2,7 +2,7 @@ package com.invoiceapp.trader;
 
 import com.invoiceapp.country.Country;
 import com.invoiceapp.country.CountryRepository;
-import com.invoiceapp.global.TraderDomain;
+import com.invoiceapp.global.enums.TraderDomain;
 import com.invoiceapp.trader.dto.TraderRequestDto;
 import com.invoiceapp.trader.dto.TraderResponseDto;
 import jakarta.persistence.EntityNotFoundException;

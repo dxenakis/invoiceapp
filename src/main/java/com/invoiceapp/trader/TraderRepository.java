@@ -1,6 +1,6 @@
 package com.invoiceapp.trader;
 
-import com.invoiceapp.global.TraderDomain;
+import com.invoiceapp.global.enums.TraderDomain;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

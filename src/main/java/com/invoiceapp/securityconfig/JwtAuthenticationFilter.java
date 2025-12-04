@@ -12,8 +12,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -37,13 +40,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Αν το token είναι έγκυρο, βάζουμε Authentication και συνεχίζουμε
                 if (jwt.validate(token)) {
                     String username = jwt.getUsername(token).orElse(null);
-                    var roleOpt = jwt.getRole(token);
+                    var roleOpt = jwt.getRole(token);                // tenant role (COMPANY_ADMIN, ACCOUNTANT, VIEWER)
+                    var globalRoleOpt = jwt.getGlobalRole(token);    // 🔹 global role (ADMIN, USER)
                     var companyIdOpt = jwt.getActiveCompanyId(token);
 
                     if (username != null) {
-                        var authorities = roleOpt
-                                .map(r -> List.of(new SimpleGrantedAuthority("ROLE_" + r.name())))
-                                .orElse(List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                        // 👇 ΕΔΩ το φτιάχνουμε σωστά
+                        List<GrantedAuthority> authorities = new ArrayList<>();
+
+                        // GLOBAL_xxx authority
+                        globalRoleOpt.ifPresent(gr ->
+                                authorities.add(new SimpleGrantedAuthority("GLOBAL_" + gr.name()))
+                        );
+
+                        // Tenant role ή default ROLE_USER
+                        if (roleOpt.isPresent()) {
+                            authorities.add(new SimpleGrantedAuthority("ROLE_" + roleOpt.get().name()));
+                        } else {
+                            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+                        }
+
                         var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
                         auth.setDetails(new ActiveCompanyDetails(req, companyIdOpt.orElse(null)));
                         SecurityContextHolder.getContext().setAuthentication(auth);

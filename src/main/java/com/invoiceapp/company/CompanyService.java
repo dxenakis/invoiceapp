@@ -12,6 +12,7 @@ public interface CompanyService {
     CompanyResponse getCompanyById(Long id);
     Map<Long, String> getCompanyNamesByIds(Collection<Long> ids);
     List<CompanyResponse> getAllCompanies();
+    CompanyResponse updateCompany(Long id, CompanyCreateRequest req);
     void deleteCompany(Long id);
     CompanyResponse createOrGetByAfm(String vatNumber,
                                      String name,

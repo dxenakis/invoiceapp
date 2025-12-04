@@ -7,6 +7,7 @@ public record SeriesResponse(
         Long branchId,
         String code,
         String description,
+        Long whouseId,
         boolean active,
         String prefix,
         String formatPattern,

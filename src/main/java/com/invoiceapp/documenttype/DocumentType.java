@@ -47,8 +47,8 @@ public class DocumentType {
     private DocumentDomain domain;
 
     /** Κίνηση πελάτη (TPRMS) */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tprms_id", nullable = false,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tprms_id",
             foreignKey = @ForeignKey(name = "fk_document_types_tprms"))
     private Tprms tprms;
 

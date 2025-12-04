@@ -3,6 +3,7 @@ package com.invoiceapp.series.dto;
 public record SeriesRequest(
         Long documentTypeId,
         Long branchId,
+        Long whouseId,
         String code,
         String description,
         Boolean active,

@@ -7,6 +7,8 @@ import com.invoiceapp.documenttype.DocumentTypeRepository;
 import com.invoiceapp.series.dto.SeriesRequest;
 import com.invoiceapp.series.dto.SeriesResponse;
 import com.invoiceapp.companyscope.RequireTenant;
+import com.invoiceapp.whouse.Whouse;
+import com.invoiceapp.whouse.WhouseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,11 +25,12 @@ public class SeriesServiceImpl implements SeriesService {
     private final SeriesRepository repo;
     private final DocumentTypeRepository documentTypeRepo;
     private final BranchRepository branchRepo;
-
-    public SeriesServiceImpl(SeriesRepository repo, DocumentTypeRepository documentTypeRepo, BranchRepository branchRepo) {
+    private final WhouseRepository whouseRepo;
+    public SeriesServiceImpl(SeriesRepository repo, DocumentTypeRepository documentTypeRepo, BranchRepository branchRepo, WhouseRepository whouseRepo) {
         this.repo = repo;
         this.documentTypeRepo = documentTypeRepo;
         this.branchRepo = branchRepo;
+        this.whouseRepo = whouseRepo;
     }
 
     private static SeriesResponse toDto(Series e) {
@@ -38,6 +41,7 @@ public class SeriesServiceImpl implements SeriesService {
                 e.getBranch() != null ? e.getBranch().getId() : null,
                 e.getCode(),
                 e.getDescription(),
+                e.getWhouse().getId(),
                 e.isActive(),
                 e.getPrefix(),
                 e.getFormatPattern(),
@@ -45,11 +49,12 @@ public class SeriesServiceImpl implements SeriesService {
         );
     }
 
-    private void apply(Series e, SeriesRequest req, DocumentType dt, Branch br) {
+    private void apply(Series e, SeriesRequest req, DocumentType dt, Branch br, Whouse wh) {
         e.setDocumentType(dt);
         e.setBranch(br);
         e.setCode(req.code());
         e.setDescription(req.description());
+        e.setWhouse(wh);
         if (req.active() != null) e.setActive(req.active());
         e.setPrefix(req.prefix());
         e.setFormatPattern(req.formatPattern());
@@ -75,8 +80,20 @@ public class SeriesServiceImpl implements SeriesService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "series code already exists in scope");
         }
 
+        Whouse wh = null;
+        if (req.whouseId() != null) {
+            wh = whouseRepo.findById(req.whouseId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Whouse not found: id=" + req.whouseId()));
+        }
+
+        Long whId = wh != null ? wh.getId() : null;
+        if (repo.existsByDocumentTypeIdAndBranchIdAndCodeAndWhouseId(dt.getId(), brId, req.code(),whId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "series code already exists in scope");
+        }
+
+
         Series e = new Series();
-        apply(e, req, dt, br);
+        apply(e, req, dt, br, wh);
         return toDto(repo.save(e));
     }
 

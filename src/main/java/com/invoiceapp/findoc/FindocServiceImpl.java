@@ -12,7 +12,7 @@ import com.invoiceapp.findoc.enums.DocumentStatus;
 import com.invoiceapp.findoc.mtrlines.Mtrlines;
 import com.invoiceapp.findoc.mtrlines.dto.MtrLineResponse;
 import com.invoiceapp.findoc.mtrlines.MtrlinesRepository;
-import com.invoiceapp.global.TraderDomain;
+import com.invoiceapp.global.enums.TraderDomain;
 import com.invoiceapp.mtrl.Mtrl;
 import com.invoiceapp.mtrl.MtrlRepository;
 import com.invoiceapp.series.Series;

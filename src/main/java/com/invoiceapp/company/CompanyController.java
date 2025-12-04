@@ -30,6 +30,15 @@ public class CompanyController {
         return ResponseEntity.ok(service.createCompany(req));
     }
 
+
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<CompanyResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CompanyCreateRequest req
+    ) {
+        return ResponseEntity.ok(service.updateCompany(id, req));
+    }
     /**
      * Επιστρέφει μία εταιρεία ΜΟΝΟ αν ο τρέχων χρήστης έχει πρόσβαση σε αυτήν.
      * Το access check γίνεται μέσα στο service (μέσω SecurityUtils + UserCompanyAccessService).

@@ -1,6 +1,6 @@
 package com.invoiceapp.trader.dto;
 
-import com.invoiceapp.global.TraderDomain;
+import com.invoiceapp.global.enums.TraderDomain;
 import com.invoiceapp.trader.Trader;
 
 import java.time.LocalDateTime;

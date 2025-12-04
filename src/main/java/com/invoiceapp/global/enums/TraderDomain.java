@@ -1,4 +1,4 @@
-package com.invoiceapp.global;
+package com.invoiceapp.global.enums;
 
 import java.util.Arrays;
 import java.util.Map;

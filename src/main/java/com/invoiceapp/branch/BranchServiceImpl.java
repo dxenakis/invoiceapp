@@ -96,7 +96,7 @@ public class BranchServiceImpl implements BranchService {
     @Transactional(readOnly = true)
     public Page<BranchResponse> list(Pageable pageable, Boolean onlyActive) {
         if (Boolean.TRUE.equals(onlyActive)) {
-            return repo.findByCompanyIdAndActiveTrue(null, pageable) // tenant filter applies; companyId ignored
+            return repo.findAll(pageable) // tenant filter applies; companyId ignored
                     .map(BranchServiceImpl::toDto);
         }
         return repo.findAll(pageable).map(BranchServiceImpl::toDto);

@@ -96,19 +96,30 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "description is required");
         if (request.domain() == null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "domain is required");
-        if (request.tprmsId() == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tprmsId is required");
-
+       /* if (request.tprmsId() == null)
+           // throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tprmsId is required");
+      */
         if (repository.existsByCode(request.code()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "code already exists: " + request.code());
 
-        Tprms tprms = tprmsRepository.findById(request.tprmsId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "TPRMS not found: id=" + request.tprmsId()));
+        // tprms -> ΠΡΟΑΙΡΕΤΙΚΟ
+        Tprms tprms = null;
+        if (request.tprmsId() != null) {
+            tprms = tprmsRepository.findById(request.tprmsId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "TPRMS not found: id=" + request.tprmsId()
+                    ));
+        }
 
+        // itePrms -> ΠΡΟΑΙΡΕΤΙΚΟ (ήδη το είχες σωστό)
         ItePrms itePrms = null;
         if (request.iteprmsId() != null) {
             itePrms = itePrmsRepository.findById(request.iteprmsId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "ItePrms not found: id=" + request.iteprmsId()));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "ItePrms not found: id=" + request.iteprmsId()
+                    ));
         }
 
         DocumentType e = new DocumentType();

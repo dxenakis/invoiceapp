@@ -1,7 +1,7 @@
 package com.invoiceapp.iteprms;
 
 import com.invoiceapp.findoc.enums.DocumentDomain;
-import com.invoiceapp.global.Effect;
+import com.invoiceapp.global.enums.Effect;
 import com.invoiceapp.iteprms.dto.ItePrmsCreateRequest;
 import com.invoiceapp.iteprms.dto.ItePrmsUpdateRequest;
 import org.springframework.data.domain.Page;

@@ -2,7 +2,7 @@ package com.invoiceapp.trader;
 
 import com.invoiceapp.company.Company;
 import com.invoiceapp.country.Country;
-import com.invoiceapp.global.TraderDomain;
+import com.invoiceapp.global.enums.TraderDomain;
 import com.invoiceapp.global.jpa.TraderDomainConverter;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;

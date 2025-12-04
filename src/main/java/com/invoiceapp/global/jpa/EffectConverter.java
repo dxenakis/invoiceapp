@@ -1,7 +1,6 @@
 package com.invoiceapp.global.jpa;
 
-import com.invoiceapp.global.Effect;
-import com.invoiceapp.global.Sign;
+import com.invoiceapp.global.enums.Effect;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

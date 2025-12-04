@@ -2,7 +2,7 @@ package com.invoiceapp.iteprms;
 
 
 import com.invoiceapp.findoc.enums.DocumentDomain;
-import com.invoiceapp.global.Effect;
+import com.invoiceapp.global.enums.Effect;
 import com.invoiceapp.findoc.enums.DocumentDomainConverter;
 import com.invoiceapp.global.jpa.EffectConverter;
 import jakarta.persistence.*;

@@ -13,7 +13,7 @@ public interface BranchRepository extends JpaRepository<Branch, Long> {
     boolean existsByCode(String code);
 
     Optional<Branch> findByCode(String code);
-
+    Page<Branch> findAll(Pageable pageable);
     // Βασικό ζητούμενο: εύρεση ανά εταιρεία
     List<Branch> findByCompanyId(Long companyId);
     Page<Branch> findByCompanyId(Long companyId, Pageable pageable);

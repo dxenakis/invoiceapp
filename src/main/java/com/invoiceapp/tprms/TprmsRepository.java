@@ -14,4 +14,5 @@ public interface TprmsRepository extends JpaRepository<Tprms, Long> {
     Tprms findByCode(String code);
     Page<Tprms> findAllByActiveTrue(Pageable pageable);
     List<Tprms> findAllByDomain(DocumentDomain domain);
+    boolean existsByCodeAndDomain(String code, DocumentDomain domain);
 }

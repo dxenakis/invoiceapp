@@ -75,6 +75,26 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
+    @Transactional
+    public CompanyResponse updateCompany(Long id, CompanyCreateRequest req) {
+        Company company = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found: " + id));
+
+        //company.setAfm(req.afm().trim());
+        company.setName(req.name().trim());
+        company.setAddressLine(req.addressLine());
+        company.setCity(req.city());
+        company.setPostalCode(req.postalCode());
+        company.setCountryCode(req.countryCode() == null ? "GR" : req.countryCode());
+        company.setEmail(req.email());
+        company.setPhone(req.phone());
+
+        Company saved = repo.save(company);
+        return CompanyResponse.fromEntity(saved);
+    }
+
+
+    @Override
     @Transactional(readOnly = true)
     public List<CompanyResponse> getAllCompanies() {
         // μόνο οι εταιρείες που έχει access ο χρήστης

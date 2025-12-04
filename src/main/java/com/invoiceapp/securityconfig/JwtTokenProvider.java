@@ -1,5 +1,6 @@
 package com.invoiceapp.securityconfig;
 
+import com.invoiceapp.user.GlobalRole;
 import com.invoiceapp.user.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -41,7 +42,7 @@ public class JwtTokenProvider {
     }
 
     /** Ένα API: αν actCid == null → pre-tenant access (χωρίς claim), αλλιώς tenant-bound. */
-    public String generateAccessToken(String username, Role role, Long actCid) {
+    public String generateAccessToken(String username, GlobalRole globalRole, Role role, Long actCid) {
         long now = System.currentTimeMillis();
 
         JwtBuilder builder = Jwts.builder()
@@ -57,6 +58,10 @@ public class JwtTokenProvider {
         }
         if (actCid != null) {
             builder.claim("act_cid", actCid);
+        }
+
+        if (globalRole != null) {
+            builder.claim("g_role", globalRole.name());
         }
 
         return builder.compact();
@@ -115,6 +120,12 @@ public class JwtTokenProvider {
         return parseClaims(token)
                 .map(c -> c.get("role", String.class))
                 .map(s -> s == null ? null : Role.valueOf(s));
+    }
+
+    public Optional<GlobalRole> getGlobalRole(String token) {
+        return parseClaims(token)
+                .map(c -> c.get("g_role", String.class))
+                .map(s -> s == null ? null : GlobalRole.valueOf(s));
     }
 
     public Optional<Long> getActiveCompanyId(String token) {

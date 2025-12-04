@@ -2,6 +2,7 @@ package com.invoiceapp.series;
 
 import com.invoiceapp.branch.Branch;
 import com.invoiceapp.documenttype.DocumentType;
+import com.invoiceapp.whouse.Whouse;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
 
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
     name = "series",
     uniqueConstraints = @UniqueConstraint(
         name = "uk_series_scope_code",
-        columnNames = {"company_id", "branch_id", "document_type_id", "code"}
+        columnNames = {"company_id", "branch_id", "code"}
     ),
     indexes = {
         @Index(name = "idx_series_company", columnList = "company_id"),
@@ -34,6 +35,11 @@ public class Series {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", foreignKey = @ForeignKey(name = "fk_series_branch"))
     private Branch branch;
+
+    /** Προαιρετικά: Σειρά συγκεκριμένου υποκαταστήματος */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "whouse_id", foreignKey = @ForeignKey(name = "fk_series_whouse"))
+    private Whouse whouse;
 
     /** Υποχρεωτικά: αφορά συγκεκριμένο τύπο παραστατικού */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -84,6 +90,14 @@ public class Series {
     public Integer getPaddingLength() { return paddingLength; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    public Whouse getWhouse() {
+        return whouse;
+    }
+
+    public void setWhouse(Whouse whouse) {
+        this.whouse = whouse;
+    }
 
     public void setId(Long id) { this.id = id; }
     public void setCompanyId(Long companyId) { this.companyId = companyId; }

@@ -1,8 +1,8 @@
 package com.invoiceapp.tprms;
 
 
-import com.invoiceapp.global.Effect;
-import com.invoiceapp.global.Sign;
+import com.invoiceapp.global.enums.Effect;
+import com.invoiceapp.global.enums.Sign;
 import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.findoc.enums.DocumentDomainConverter;
 import com.invoiceapp.global.jpa.EffectConverter;
@@ -20,7 +20,8 @@ import java.time.Instant;
 @Entity
 @Table(
         name = "tprms",
-        uniqueConstraints = @UniqueConstraint(name = "uk_tprms_code", columnNames = "code")
+
+        uniqueConstraints = @UniqueConstraint(name = "uk_tprms_code", columnNames = {"code", "domain"})
 )
 public class Tprms {
 

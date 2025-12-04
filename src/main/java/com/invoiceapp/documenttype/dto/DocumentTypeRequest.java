@@ -8,6 +8,6 @@ public record DocumentTypeRequest(
         @NotBlank String code,
         @NotBlank String description,
         @NotNull Integer domain,
-        @NotNull Long tprmsId,
+        Long tprmsId,
         Long iteprmsId // προαιρετικό
 ) {}

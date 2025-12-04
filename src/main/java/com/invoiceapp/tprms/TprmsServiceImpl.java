@@ -1,8 +1,8 @@
 package com.invoiceapp.tprms;
 
 import com.invoiceapp.findoc.enums.DocumentDomain;
-import com.invoiceapp.global.Effect;
-import com.invoiceapp.global.Sign;
+import com.invoiceapp.global.enums.Effect;
+import com.invoiceapp.global.enums.Sign;
 import com.invoiceapp.tprms.dto.TprmsCreateRequest;
 import com.invoiceapp.tprms.dto.TprmsUpdateRequest;
 import org.springframework.data.domain.Page;
@@ -28,7 +28,8 @@ public class TprmsServiceImpl implements TprmsService {
         if (req.code() == null || req.code().isBlank()) {
             throw new IllegalArgumentException("code is required");
         }
-        if (repo.existsByCode(req.code())) {
+        //if (repo.existsByCode(req.code())) {
+        if (repo.existsByCodeAndDomain(req.code(), DocumentDomain.fromCode(req.domain()))) {
             throw new IllegalArgumentException("code already exists: " + req.code());
         }
         if (req.description() == null || req.description().isBlank()) {

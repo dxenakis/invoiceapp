@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 public enum DocumentDomain {
     PURCHASES(1251, "Αγορές"),   // Αγορές
     SALES(1351, "Πωλήσεις"),       // Πωλήσεις
+   // ITEDOC(1351, "Αποθήκη"),       // Πωλήσεις
     COLLECTIONS(1381, "Εισπράξεις"),    // Εισπράξεις
     PAYMENTS(1281, "Πληρωμές") ;   // Πληρωμές
     private final int code;

@@ -32,6 +32,9 @@ public class User {
     @Column(name = "refresh_version", nullable = false)
     private Integer refreshVersion = 1;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "global_role",nullable = false)
+    private GlobalRole globalRole = GlobalRole.USER;
     // getters / setters
 
     public Long getId() { return id; }
@@ -70,5 +73,13 @@ public class User {
 
     public void setLastname(String lastname) {
         this.lastname = lastname;
+    }
+
+    public GlobalRole getGlobalRole() {
+        return globalRole;
+    }
+
+    public void setGlobalRole(GlobalRole globalRole) {
+        this.globalRole = globalRole;
     }
 }

@@ -74,11 +74,11 @@ public class AuthService {
 
 
         // PRE-TENANT access: actCid = null, role = null (δεν γράφεται claim)
-        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null);
+        String accessToken = jwt.generateAccessToken(user.getUsername(),user.getGlobalRole(),  null, null);
         String refreshToken = jwt.generateRefreshToken(user.getUsername(), user.getRefreshVersion());
 
         CookieUtils.setRefreshCookie(res, refreshToken);
-        return new LoginResponse(accessToken,null,user.getUsername(),user.getFirstname(), user.getLastname(), userCompanies);
+        return new LoginResponse(accessToken,user.getGlobalRole(),null,user.getUsername(),user.getFirstname(), user.getLastname(), userCompanies);
     }
 
     @Transactional(readOnly = true)
@@ -96,7 +96,7 @@ public class AuthService {
                 })
                 .toList();
 
-        return new MeResponse(user.getUsername(),user.getFirstname(),user.getLastname(), userCompanies);
+        return new MeResponse(user.getUsername(),user.getFirstname(),user.getLastname(),user.getGlobalRole(), userCompanies);
     }
 
 
@@ -118,7 +118,7 @@ public class AuthService {
         userRepo.save(user);
 
         // Auto-login (pre-tenant)
-        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null);
+        String accessToken = jwt.generateAccessToken(user.getUsername(),user.getGlobalRole(),  null, null);
         String refreshToken = jwt.generateRefreshToken(user.getUsername(), user.getRefreshVersion());
         CookieUtils.setRefreshCookie(res, refreshToken);
 
@@ -140,7 +140,7 @@ public class AuthService {
         user.setRefreshVersion(1);
         userRepo.save(user);
 
-        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null); // pre-tenant
+        String accessToken = jwt.generateAccessToken(user.getUsername(), user.getGlobalRole(), null, null); // pre-tenant
         String refreshToken = jwt.generateRefreshToken(user.getUsername(), user.getRefreshVersion());
         CookieUtils.setRefreshCookie(res, refreshToken);
 
@@ -161,12 +161,12 @@ public class AuthService {
             Role roleForCompany = accessService.roleFor(user.getId(), companyId)
                     .orElseThrow(() -> new AccessDeniedException("No access to company " + companyId));
 
-            String accessToken = jwt.generateAccessToken(user.getUsername(), roleForCompany, companyId);
+            String accessToken = jwt.generateAccessToken(user.getUsername(), user.getGlobalRole(), roleForCompany, companyId);
             return new AuthResponse(accessToken);
         }
 
         // Αν για κάποιο λόγο ζητηθεί "null" company, επιστρέφουμε pre-tenant access
-        String accessToken = jwt.generateAccessToken(user.getUsername(), null, null);
+        String accessToken = jwt.generateAccessToken(user.getUsername(),user.getGlobalRole(), null, null);
         return new AuthResponse(accessToken);
     }
 
@@ -199,11 +199,11 @@ public class AuthService {
         if (actCid != null) {
             Role roleForCompany = accessService.roleFor(user.getId(), actCid)
                     .orElseThrow(() -> new AccessDeniedException("No access to company " + actCid));
-            String newAccess = jwt.generateAccessToken(user.getUsername(), roleForCompany, actCid);
+            String newAccess = jwt.generateAccessToken(user.getUsername(), user.getGlobalRole(), roleForCompany, actCid);
             return new RefreshResponse(newAccess);
         } else {
             // pre-tenant access
-            String newAccess = jwt.generateAccessToken(user.getUsername(), null, null);
+            String newAccess = jwt.generateAccessToken(user.getUsername(),user.getGlobalRole(),  null, null);
             return new RefreshResponse(newAccess);
         }
     }
