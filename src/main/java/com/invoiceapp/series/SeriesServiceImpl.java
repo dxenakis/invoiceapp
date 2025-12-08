@@ -16,6 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
+import com.invoiceapp.series.Series;
+import com.invoiceapp.documenttype.DocumentType;
+import com.invoiceapp.branch.Branch;
+import com.invoiceapp.whouse.Whouse;
+import com.invoiceapp.series.dto.SeriesResponse;
 
 @Service
 @Transactional
@@ -34,20 +39,55 @@ public class SeriesServiceImpl implements SeriesService {
     }
 
     private static SeriesResponse toDto(Series e) {
+        // ------------- DocumentType -> nested DTO -------------
+        DocumentType dt = e.getDocumentType();
+        SeriesResponse.DocumentTypeNestedResponse dtDto = null;
+        if (dt != null) {
+            dtDto = new SeriesResponse.DocumentTypeNestedResponse(
+                    dt.getId(),
+                    dt.getCode(),
+                    dt.getDescription()
+            );
+        }
+
+        // ------------- Branch -> nested DTO -------------
+        Branch br = e.getBranch();
+        SeriesResponse.BranchNestedResponse brDto = null;
+        if (br != null) {
+            brDto = new SeriesResponse.BranchNestedResponse(
+                    br.getId(),
+                    br.getCode(),
+                    br.getName()
+            );
+        }
+
+        // ------------- Whouse -> nested DTO -------------
+        Whouse wh = e.getWhouse();
+        SeriesResponse.WhouseNestedResponse whDto = null;
+        if (wh != null) {
+            whDto = new SeriesResponse.WhouseNestedResponse(
+                    wh.getId(),
+                    wh.getCode(),
+                    wh.getName()
+            );
+        }
+
+        // ------------- Series -> SeriesResponse -------------
         return new SeriesResponse(
                 e.getId(),
                 e.getCompanyId(),
-                e.getDocumentType() != null ? e.getDocumentType().getId() : null,
-                e.getBranch() != null ? e.getBranch().getId() : null,
                 e.getCode(),
                 e.getDescription(),
-                e.getWhouse().getId(),
                 e.isActive(),
                 e.getPrefix(),
                 e.getFormatPattern(),
-                e.getPaddingLength()
+                e.getPaddingLength(),
+                dtDto,
+                brDto,
+                whDto
         );
     }
+
 
     private void apply(Series e, SeriesRequest req, DocumentType dt, Branch br, Whouse wh) {
         e.setDocumentType(dt);
@@ -117,7 +157,7 @@ public class SeriesServiceImpl implements SeriesService {
 
         DocumentType dt = e.getDocumentType();
         Branch br = e.getBranch();
-
+        Whouse wh = e.getWhouse();
         if (req.documentTypeId() != null && (dt == null || !req.documentTypeId().equals(dt.getId()))) {
             dt = documentTypeRepo.findById(req.documentTypeId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "DocumentType not found: id=" + req.documentTypeId()));
@@ -128,6 +168,12 @@ public class SeriesServiceImpl implements SeriesService {
             br = branchRepo.findById(req.branchId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Branch not found: id=" + req.branchId()));
             e.setBranch(br);
+        }
+
+        if(req.whouseId() !=null && (wh == null || !req.branchId().equals(wh.getId()))) {
+            wh = whouseRepo.findById(req.whouseId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Whouse not found: id=" + req.whouseId()));
+            e.setWhouse(wh);
         }
 
         if (StringUtils.hasText(req.code())) e.setCode(req.code());

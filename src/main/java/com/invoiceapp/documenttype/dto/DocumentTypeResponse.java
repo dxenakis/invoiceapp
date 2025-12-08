@@ -10,8 +10,10 @@ public record DocumentTypeResponse(
         Integer domain,
         Long tprmsId,
         String tprmsCode,
+        String tprmsDescription,
         Long iteprmsId,
         String iteprmsCode,
+        String iteprmsDescription,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}

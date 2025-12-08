@@ -43,8 +43,10 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
                 e.getDomain().getCode(),
                 e.getTprms() != null ? e.getTprms().getId() : null,
                 e.getTprms() != null ? e.getTprms().getCode() : null,
+                e.getTprms() != null ? e.getTprms().getDescription() : null,
                 e.getItePrms() != null ? e.getItePrms().getId() : null,
                 e.getItePrms() != null ? e.getItePrms().getCode() : null,
+                e.getItePrms() != null ? e.getItePrms().getDescription() : null,
                 e.getCreatedAt(),
                 e.getUpdatedAt()
         );

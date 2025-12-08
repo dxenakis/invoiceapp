@@ -42,7 +42,7 @@ public class ItePrmsController {
     public ItePrms update(@PathVariable Long id, @RequestBody ItePrmsUpdateRequest req) {
         return service.update(id, req);
     }
-    @GetMapping("/{domain}")
+    @GetMapping("/domain/{domain}")
     public List<ItePrms> getByDomain(@PathVariable DocumentDomain domain) {
         return service.findAllByDomain(domain);
     }
