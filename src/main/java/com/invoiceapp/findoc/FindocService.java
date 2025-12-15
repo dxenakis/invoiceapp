@@ -2,6 +2,7 @@ package com.invoiceapp.findoc;
 
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
+import com.invoiceapp.findoc.dto.FindocSaveRequest;
 import com.invoiceapp.findoc.mtrlines.dto.MtrLineRequest;
 import com.invoiceapp.findoc.enums.DocumentStatus;
 import org.springframework.data.domain.Page;
@@ -26,4 +27,6 @@ public interface FindocService {
     FindocResponse updateMtrdoc(Long findocId, MtrdocRequest request);
 
     Page<FindocResponse> list(Pageable pageable, DocumentStatus status);
+    // ΝΕΟ: μαζική καταχώρηση
+    FindocResponse save(FindocSaveRequest req);
 }

@@ -3,7 +3,7 @@ package com.invoiceapp.series.dto;
 public record SeriesResponse(
         Long id,
         Long companyId,
-
+        Integer domain,
         String code,
         String description,
         boolean active,

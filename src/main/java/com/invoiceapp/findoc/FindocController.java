@@ -3,6 +3,7 @@ package com.invoiceapp.findoc;
 import com.invoiceapp.companyscope.RequireTenant;
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
+import com.invoiceapp.findoc.dto.FindocSaveRequest;
 import com.invoiceapp.findoc.mtrlines.dto.MtrLineRequest;
 import com.invoiceapp.findoc.enums.DocumentStatus;
 import jakarta.validation.Valid;
@@ -79,5 +80,15 @@ public class FindocController {
                                                        @RequestBody MtrdocRequest request) {
         return ResponseEntity.ok(service.updateMtrdoc(id, request));
     }
+
+
+    @PostMapping("/full")
+    public ResponseEntity<FindocResponse> save(@Valid @RequestBody FindocSaveRequest request) {
+        FindocResponse saved = service.save(request);
+        return ResponseEntity
+                .created(URI.create("/api/findocs/" + saved.id()))
+                .body(saved);
+    }
+
 
 }

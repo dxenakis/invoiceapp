@@ -1,6 +1,10 @@
 package com.invoiceapp.findoc.dto;
 
+import com.invoiceapp.findoc.mtrdoc.dto.MtrdocRequest;
+import com.invoiceapp.findoc.mtrlines.dto.MtrLineRequest;
+
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Request για δημιουργία draft παραστατικού (αγοράς/πώλησης κτλ).
@@ -17,3 +21,4 @@ public record FindocCreateRequest(
         Long paymentMethodId,   // νέο
         Long shipKindId         // νέο
 ) {}
+

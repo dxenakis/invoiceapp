@@ -6,6 +6,7 @@ import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.documenttype.DocumentTypeRepository;
 import com.invoiceapp.findoc.dto.FindocCreateRequest;
 import com.invoiceapp.findoc.dto.FindocResponse;
+import com.invoiceapp.findoc.dto.FindocSaveRequest;
 import com.invoiceapp.findoc.mtrlines.dto.MtrLineRequest;
 import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.findoc.enums.DocumentStatus;
@@ -557,5 +558,121 @@ public class FindocServiceImpl implements FindocService {
 
         return toResponse(findocRepo.save(f));
     }
+
+
+
+    @Override
+    @Transactional
+    public FindocResponse save(FindocSaveRequest req) {
+
+        // 1. Validations (ίδια λογική με createDraft)
+        if (req.documentTypeId() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "documentTypeId required");
+        // ... branchId, seriesId, traderId, documentDate, documentDomain ...
+
+        DocumentDomain domain = DocumentDomain.fromCode(req.documentDomain());
+        DocumentType dt = getDocumentType(req.documentTypeId());
+        Branch br = getBranch(req.branchId());
+        Series sr = getSeries(req.seriesId());
+        Trader trader = getTrader(req.traderId());
+
+        validateTraderForDocument(domain,trader); // έχεις ήδη κάτι τέτοιο
+
+        PaymentMethod pm = getPayment(req.paymentMethodId());
+        ShipKind sk = getShipKind(req.shipKindId());
+
+        // 2. Αν id == null → νέο Findoc, αλλιώς φόρτωσε το υπάρχον
+        Findoc f;
+        if (req.id() == null) {
+            f = new Findoc();
+           // f.setCompanyId(/* από context */);
+            f.setDocumentDomain(domain);
+            f.setStatus(DocumentStatus.POSTED); // ή ό,τι αποφασίσεις για "εκδόθηκε"
+        } else {
+            f = findocRepo.findById(req.id())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "findoc not found"));
+            // εδώ μπορείς να ελέγξεις αν επιτρέπεις update σε ήδη posted, κτλ.
+        }
+
+        // 3. Header fields
+        f.setDocumentType(dt);
+        f.setBranch(br);
+        f.setSeries(sr);
+        f.setTrader(trader);
+        f.setDocumentDate(req.documentDate());
+        f.setPaymentMethod(pm);
+        f.setShipKind(sk);
+
+        // αν είναι νέο → δώσε αριθμό από counter
+        if (f.getId() == null) {
+            //counterSvc. assignNextNumber(f, sr); // έχεις ήδη κάτι τέτοιο
+            counterSvc.nextNumber(new NextNumberRequest(f.getSeries().getId() , f.getDocumentDate()  ));
+
+        }
+
+        findocRepo.save(f);
+
+        // 4. Mtrdoc (στοιχεία παράδοσης)
+        if (req.mtrdoc() != null) {
+            // βρες αν υπάρχει ήδη mtrdoc για αυτό το findoc
+            Mtrdoc existing = mtrdocRepo.findByFindocId(f.getId()).orElse(null);
+            Whouse wh = getWhouse(req.mtrdoc().whouseId());
+
+            if (existing == null) {
+                existing = new Mtrdoc();
+                existing.setFindoc(f);
+            }
+
+            existing.setAddressLine1(req.mtrdoc().addressLine1());
+            // ... κλπ για τα υπόλοιπα πεδία ...
+            existing.setWhouse(wh);
+
+            mtrdocRepo.save(existing);
+        }
+
+        // 5. Γραμμές: πιο απλό είναι να ΣΒΗΝΕΙΣ και να ΞΑΝΑΦΤΙΑΧΝΕΙΣ
+        lineRepo.deleteById(f.getId());
+
+        int lineNo = 1;
+        for (MtrLineRequest lreq : req.mtrlines()) {
+            Mtrl m = getMtrl(lreq.mtrlId());
+            Vat v = getVat(lreq.vatId());
+            MtrUnit u = getMtrUnit(lreq.mtrUnitId());
+            Whouse wh = getWhouse(lreq.whouseId());
+
+            // υπολογισμοί ίδιοι με upsertLine
+            BigDecimal qty = nz(lreq.qty());
+            BigDecimal price = nz(lreq.price());
+            BigDecimal dr = nz(lreq.discountRate());
+
+            BigDecimal lineGross = qty.multiply(price);
+            BigDecimal discount = lineGross.multiply(dr).divide(new BigDecimal("100"));
+            BigDecimal net = lineGross.subtract(discount);
+            BigDecimal vatAmount = net.multiply(v.getRate()).divide(new BigDecimal("100"));
+            BigDecimal total = net.add(vatAmount);
+
+            Mtrlines line = new Mtrlines();
+            line.setFindoc(f);
+            line.setLineNo(lineNo++); // ή πάρε από lreq.lineNo()
+            line.setMtrl(m);
+            line.setVat(v);
+            line.setMtrUnit(u);
+            line.setWhouse(wh);
+            line.setQty(qty);
+            line.setPrice(price);
+            line.setDiscountRate(dr);
+            line.setNetAmount(net);
+            line.setVatAmount(vatAmount);
+            line.setTotalAmount(total);
+
+            lineRepo.save(line);
+        }
+
+        // 6. Recalc totals (έχεις ήδη helper)
+        recalcTotals(f);
+
+        return toResponse(f);
+    }
+
 
 }

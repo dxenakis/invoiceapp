@@ -2,6 +2,8 @@ package com.invoiceapp.series;
 
 import com.invoiceapp.branch.Branch;
 import com.invoiceapp.documenttype.DocumentType;
+import com.invoiceapp.findoc.enums.DocumentDomain;
+import com.invoiceapp.findoc.enums.DocumentDomainConverter;
 import com.invoiceapp.whouse.Whouse;
 import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
@@ -30,6 +32,11 @@ public class Series {
     @TenantId
     @Column(name = "company_id", nullable = false, updatable = false)
     private Long companyId;
+
+    /** Αγορές/Πωλήσεις/Εισπράξεις/Πληρωμές */
+    @Convert(converter = DocumentDomainConverter.class)
+    @Column(name = "domain", nullable = false, length = 20)
+    private DocumentDomain domain;
 
     /** Προαιρετικά: Σειρά συγκεκριμένου υποκαταστήματος */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -97,6 +104,14 @@ public class Series {
 
     public void setWhouse(Whouse whouse) {
         this.whouse = whouse;
+    }
+
+    public DocumentDomain getDomain() {
+        return domain;
+    }
+
+    public void setDomain(DocumentDomain domain) {
+        this.domain = domain;
     }
 
     public void setId(Long id) { this.id = id; }

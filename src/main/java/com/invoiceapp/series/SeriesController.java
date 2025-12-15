@@ -1,5 +1,7 @@
 package com.invoiceapp.series;
 
+import com.invoiceapp.documenttype.dto.DocumentTypeResponse;
+import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.series.dto.SeriesRequest;
 import com.invoiceapp.series.dto.SeriesResponse;
 import com.invoiceapp.companyscope.RequireTenant;
@@ -27,6 +29,12 @@ public class SeriesController {
         return ResponseEntity.ok(service.list(pageable));
     }
 
+    @GetMapping("/by-domain")
+    public ResponseEntity<Page<SeriesResponse>> listByDomain(@RequestParam DocumentDomain domain, Pageable pageable) {
+        return ResponseEntity.ok(service.listByDomain(domain,pageable));
+    }
+
+
     @GetMapping("/{id}")
     public ResponseEntity<SeriesResponse> get(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
@@ -37,6 +45,8 @@ public class SeriesController {
         SeriesResponse created = service.create(req);
         return ResponseEntity.created(URI.create("/series/" + created.id())).body(created);
     }
+
+
 
     @PutMapping("/{id}")
     public ResponseEntity<SeriesResponse> update(@PathVariable Long id, @Valid @RequestBody SeriesRequest req) {

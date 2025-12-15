@@ -4,6 +4,7 @@ import com.invoiceapp.branch.Branch;
 import com.invoiceapp.branch.BranchRepository;
 import com.invoiceapp.documenttype.DocumentType;
 import com.invoiceapp.documenttype.DocumentTypeRepository;
+import com.invoiceapp.findoc.enums.DocumentDomain;
 import com.invoiceapp.series.dto.SeriesRequest;
 import com.invoiceapp.series.dto.SeriesResponse;
 import com.invoiceapp.companyscope.RequireTenant;
@@ -76,6 +77,7 @@ public class SeriesServiceImpl implements SeriesService {
         return new SeriesResponse(
                 e.getId(),
                 e.getCompanyId(),
+                e.getDomain().getCode(),
                 e.getCode(),
                 e.getDescription(),
                 e.isActive(),
@@ -93,6 +95,7 @@ public class SeriesServiceImpl implements SeriesService {
         e.setDocumentType(dt);
         e.setBranch(br);
         e.setCode(req.code());
+        e.setDomain(DocumentDomain.fromCode(req.domain()));
         e.setDescription(req.description());
         e.setWhouse(wh);
         if (req.active() != null) e.setActive(req.active());
@@ -151,6 +154,13 @@ public class SeriesServiceImpl implements SeriesService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<SeriesResponse> listByDomain(DocumentDomain domain,Pageable pageable) {
+        return repo.findAllByDomain(domain,pageable).map(SeriesServiceImpl::toDto);
+    }
+
+
+    @Override
     public SeriesResponse update(Long id, SeriesRequest req) {
         Series e = repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Series not found: id=" + id));
@@ -175,7 +185,7 @@ public class SeriesServiceImpl implements SeriesService {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Whouse not found: id=" + req.whouseId()));
             e.setWhouse(wh);
         }
-
+        if (req.domain() != null) e.setDomain(DocumentDomain.fromCode(req.domain()));
         if (StringUtils.hasText(req.code())) e.setCode(req.code());
         if (req.description() != null) e.setDescription(req.description());
         if (req.active() != null) e.setActive(req.active());
