@@ -10,7 +10,9 @@ public class TraderResponseDto {
     private Long id;
     private String code;
     private String name;
+    private String email;
     private String phone;
+    private String cellphone;
     private String address;
     private String city;
     private String zip;
@@ -54,6 +56,22 @@ public class TraderResponseDto {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getCellphone() {
+        return cellphone;
+    }
+
+    public void setCellphone(String cellphone) {
+        this.cellphone = cellphone;
     }
 
     public String getAddress() {
@@ -127,7 +145,9 @@ public class TraderResponseDto {
         dto.setId(trader.getId());
         dto.setCode(trader.getCode());
         dto.setName(trader.getName());
+        dto.setEmail(trader.getEmail());
         dto.setPhone(trader.getPhone());
+        dto.setCellphone(trader.getCellphone());
         dto.setAddress(trader.getAddress());
         dto.setCity(trader.getCity());
         dto.setZip(trader.getZip());

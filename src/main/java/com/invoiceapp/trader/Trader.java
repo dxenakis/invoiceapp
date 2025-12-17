@@ -48,6 +48,13 @@ public class Trader {
         @Column(name = "phone", length = 50)
         private String phone;
 
+        @Column(name = "cellphone", length = 50)
+        private String cellphone;
+
+        @Column(name = "email")
+        private String email;
+
+
         @Column(name = "address", length = 500)
         private String address;
 
@@ -151,5 +158,21 @@ public class Trader {
 
         public void setTraderDomain(TraderDomain traderDomain) {
             this.traderDomain = traderDomain;
+        }
+
+        public String getEmail() {
+                return email;
+        }
+
+        public void setEmail(String email) {
+                this.email = email;
+        }
+
+        public String getCellphone() {
+                return cellphone;
+        }
+
+        public void setCellphone(String cellphone) {
+                this.cellphone = cellphone;
         }
 }

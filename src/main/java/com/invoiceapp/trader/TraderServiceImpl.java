@@ -40,7 +40,9 @@ public class TraderServiceImpl implements TraderService {
     private void applyRequestToEntity(TraderRequestDto request, Trader trader, Country country) {
         trader.setCode(request.getCode());
         trader.setName(request.getName());
+        trader.setEmail(request.getEmail());
         trader.setPhone(request.getPhone());
+        trader.setCellphone(request.getCellphone());
         trader.setAddress(request.getAddress());
         trader.setCity(request.getCity());
         trader.setZip(request.getZip());

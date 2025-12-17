@@ -86,6 +86,9 @@ public class Findoc {
     @Column(name = "number")
     private Long number;
 
+    @Column(name = "fincode", nullable = false)
+    private String fincode;
+
     @Column(name = "printed_number", length = 80)
     private String printedNumber;
 

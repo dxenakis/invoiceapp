@@ -14,8 +14,14 @@ public class TraderRequestDto {
     @Size(max = 200)
     private String name;
 
+    @Size(max = 200)
+    private String email;
+
     @Size(max = 50)
     private String phone;
+
+    @Size(max = 50)
+    private String cellphone;
 
     @Size(max = 500)
     private String address;
@@ -85,5 +91,21 @@ public class TraderRequestDto {
 
     public void setCountryId(Long countryId) {
         this.countryId = countryId;
+    }
+
+    public @Size(max = 200) String getEmail() {
+        return email;
+    }
+
+    public void setEmail(@Size(max = 200) String email) {
+        this.email = email;
+    }
+
+    public @Size(max = 50) String getCellphone() {
+        return cellphone;
+    }
+
+    public void setCellphone(@Size(max = 50) String cellphone) {
+        this.cellphone = cellphone;
     }
 }
