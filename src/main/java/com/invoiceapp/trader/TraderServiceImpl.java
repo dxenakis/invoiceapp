@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
+
 @Service
 @Transactional
 public class TraderServiceImpl implements TraderService {
@@ -49,7 +51,7 @@ public class TraderServiceImpl implements TraderService {
         trader.setCountry(country);
     }
 
-    // --------- Implementation ---------
+    //-------- Implementation ---------
 
     @Override
     @Transactional(readOnly = true)
@@ -59,12 +61,17 @@ public class TraderServiceImpl implements TraderService {
         if (search == null || search.isBlank()) {
             page = traderRepository.findByTraderDomain(domain, pageable);
         } else {
-            page = traderRepository.findByTraderDomainAndNameContainingIgnoreCase(
-                    domain, search.trim(), pageable);
+            String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
+            page = traderRepository.search(domain, pattern, pageable);
+
         }
 
         return page.map(TraderResponseDto::fromEntity);
     }
+
+
+
+
 
     @Override
     @Transactional(readOnly = true)
